@@ -54,6 +54,8 @@ public class RelayCommand<T> : ICommand
         }
     }
 
+    public void Revaluate() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+
     private static bool AlwaysTrue(T? _) => true;
 }
 

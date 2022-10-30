@@ -3,10 +3,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:behaviors="http://schemas.microsoft.com/xaml/behaviors"
-        xmlns:viewmodels="clr-namespace:GeneologyImageCollector.ViewModels"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewModels="clr-namespace:GeneologyImageCollector.ViewModels"
         mc:Ignorable="d"
-        d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel, IsDesignTimeCreatable=False}"
+        d:DataContext="{d:DesignInstance Type=viewModels:MainViewModel, IsDesignTimeCreatable=False}"
         Title="MainWindow" Height="450" Width="800">
 
     <behaviors:Interaction.Triggers>
@@ -16,5 +16,52 @@
     </behaviors:Interaction.Triggers>
 
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0" DataContext="{Binding Search}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBox Grid.Row="0" Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}" Margin="3,3,3,0" />
+            <ListBox Grid.Row="1" ItemsSource="{Binding Items}" Margin="3">
+                <ListBox.Resources>
+                    <DataTemplate DataType="{x:Type viewModels:PersonListItem}">
+                        <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type viewModels:ImageListItem}">
+                        <TextBlock Grid.Column="1" Text="{Binding Title}" />
+                    </DataTemplate>
+                </ListBox.Resources>
+            </ListBox>
+        </Grid>
+
+        <Grid Grid.Column="1" DataContext="{Binding DisplayItems}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding GoBackCommand}" Content="&lt;--" Margin="5" />
+                <Button Command="{Binding GoForwardCommand}" Content="--&gt;"  Margin="5" />
+            </StackPanel>
+
+            <ContentPresenter Grid.Row="1" Content="{Binding Current}">
+                <ContentPresenter.Resources>
+                    <DataTemplate DataType="{x:Type viewModels:PersonDisplayViewModel}">
+                        <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type viewModels:ImageDisplayViewModel}">
+                        <TextBlock Text="{Binding Title}" />
+                    </DataTemplate>
+                </ContentPresenter.Resources>
+            </ContentPresenter>
+
+        </Grid>
+
     </Grid>
 </Window>
