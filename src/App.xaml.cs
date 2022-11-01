@@ -38,7 +38,10 @@ namespace GeneologyImageCollector
 
                     // View models
                     services
+                        .AddSingleton<DisplayViewModelRepository>()
                         .AddTransient<IMainViewModel, MainViewModel>();
+
+                    services.AddSingleton<ImageLoader>();
 
                 }).Build();
         }

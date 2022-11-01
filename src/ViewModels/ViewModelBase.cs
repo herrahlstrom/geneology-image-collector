@@ -1,11 +1,37 @@
-﻿using System.ComponentModel;
+﻿using GeneologyImageCollector.Infrastructure;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 
 namespace GeneologyImageCollector.ViewModels;
 
-internal abstract class ViewModelBase : INotifyPropertyChanged
+internal interface IViewModel
 {
+    public ICommand LoadCommand { get; }
+}
+
+internal abstract class ViewModelBase : IViewModel, INotifyPropertyChanged
+{
+    private string _errorMessage = "";
+
+    public ViewModelBase()
+    {
+        LoadCommand = new RelayCommand(LoadCommand_Execute);
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public string ErrorMessage
+    {
+        get { return _errorMessage; }
+        set { SetProperty(ref _errorMessage, value); }
+    }
+
+    public ICommand LoadCommand { get; }
+
+    protected virtual void LoadCommand_Execute()
+    {
+    }
 
     protected void OnPropertyChanged([CallerMemberName] string propertyName = null!)
     {

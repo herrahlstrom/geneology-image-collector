@@ -14,22 +14,21 @@ internal interface IMainViewModel : ILoadableViewModel
 internal class MainViewModel : ViewModelBase, IMainViewModel
 {
     private readonly IDbContextFactory<AppDbContext> m_dbFactory;
+    private readonly DisplayViewModelRepository displayViewModelRepository;
 
-    public MainViewModel(IDbContextFactory<AppDbContext> dbFactory)
+    public MainViewModel(IDbContextFactory<AppDbContext> dbFactory, DisplayViewModelRepository displayViewModelRepository)
     {
         m_dbFactory = dbFactory;
+        this.displayViewModelRepository = displayViewModelRepository;
         DisplayItems = new HistoryHolder<IDisplayViewModel>();
-
-        LoadCommand = new RelayCommand(LoadCommand_Execute);
 
         Search = new SearchViewModel<IListItem>();
     }
 
     public HistoryHolder<IDisplayViewModel> DisplayItems { get; }
-    public ICommand LoadCommand { get; }
     public SearchViewModel<IListItem> Search { get; }
 
-    private async void LoadCommand_Execute()
+    protected override async void LoadCommand_Execute()
     {
         await UpdateSearchItems();
 
@@ -38,10 +37,10 @@ internal class MainViewModel : ViewModelBase, IMainViewModel
             Name = $"Person {DateTime.UtcNow}"
         });
 
-        DisplayItems.Add(new ImageDisplayViewModel
+        await foreach(var randomId in displayViewModelRepository.GetRandomImageId(10))
         {
-            Title = $"Bild {DateTime.UtcNow}"
-        });
+            DisplayItems.Add(await displayViewModelRepository.GetImageDisplayViewModelAsync(randomId));
+        }
 
         DisplayItems.Add(new PersonDisplayViewModel
         {
