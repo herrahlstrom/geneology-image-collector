@@ -15,8 +15,8 @@ internal class HistoryHolder<T> : ViewModelBase
     }
 
     public T? Current => m_current;
-    public RelayCommand GoBackCommand { get; }
-    public RelayCommand GoForwardCommand { get; }
+    public IRelayCommand GoBackCommand { get; }
+    public IRelayCommand GoForwardCommand { get; }
 
     public void Add(T item)
     {

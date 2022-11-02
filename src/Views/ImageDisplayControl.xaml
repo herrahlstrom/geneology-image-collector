@@ -28,7 +28,14 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <Image Source="{Binding Image}" RenderOptions.BitmapScalingMode="HighQuality" />
+        <StackPanel>
+            <TextBlock>
+                <Hyperlink Command="{Binding OpenImageCommand}">
+                    Öppna ⧉
+                </Hyperlink>
+            </TextBlock>
+        <Image Source="{Binding Image}" RenderOptions.BitmapScalingMode="HighQuality" MaxHeight="800" />
+        </StackPanel>
 
         <TextBlock Text="{Binding Notes}" TextWrapping="Wrap" />
 

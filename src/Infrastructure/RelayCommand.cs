@@ -2,7 +2,12 @@
 
 namespace GeneologyImageCollector.Infrastructure;
 
-public class RelayCommand<T> : ICommand
+public interface IRelayCommand : ICommand
+{
+    void Revaluate();
+}
+
+public class RelayCommand<T> : IRelayCommand
 {
     private readonly Predicate<T?> _canExecute;
     private readonly Action<T?> _execute;

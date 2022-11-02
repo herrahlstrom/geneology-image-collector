@@ -4,5 +4,5 @@ namespace GeneologyImageCollector.Infrastructure.ViewModels;
 
 internal interface ILoadableViewModel
 {
-    public ICommand LoadCommand { get; }
+    public IRelayCommand LoadCommand { get; }
 }

@@ -1,13 +1,14 @@
 ﻿using GeneologyImageCollector.Infrastructure;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
 
 namespace GeneologyImageCollector.ViewModels;
 
 internal interface IViewModel
 {
-    public ICommand LoadCommand { get; }
+    public IRelayCommand LoadCommand { get; }
 }
 
 internal abstract class ViewModelBase : IViewModel, INotifyPropertyChanged
@@ -17,6 +18,10 @@ internal abstract class ViewModelBase : IViewModel, INotifyPropertyChanged
     public ViewModelBase()
     {
         LoadCommand = new RelayCommand(LoadCommand_Execute);
+
+        OpenFileCommand = new RelayCommand<string>(
+            canExecute: path => File.Exists(path),
+            execute: path => Process.Start(new ProcessStartInfo("explorer", path!)));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -27,7 +32,8 @@ internal abstract class ViewModelBase : IViewModel, INotifyPropertyChanged
         set { SetProperty(ref _errorMessage, value); }
     }
 
-    public ICommand LoadCommand { get; }
+    public IRelayCommand LoadCommand { get; }
+    public IRelayCommand OpenFileCommand { get; }
 
     protected virtual void LoadCommand_Execute()
     {

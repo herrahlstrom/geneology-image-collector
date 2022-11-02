@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using GeneologyImageCollector.Infrastructure;
+using System.Drawing;
 using System.Threading;
 using System.Windows.Media;
 
@@ -15,9 +16,14 @@ internal class ImageDisplayViewModel : ViewModelBase, IDisplayViewModel
     public ImageDisplayViewModel(ImageLoader imageLoader)
     {
         this.imageLoader = imageLoader;
+
+        OpenImageCommand = new RelayCommand(
+            canExecute: () => OpenFileCommand.CanExecute(FullPath),
+            execute: () => OpenFileCommand.Execute(FullPath));
     }
 
     public string FullPath { get; init; } = "";
+
     public Guid Id { get; init; }
 
     public ImageSource? Image
@@ -26,11 +32,11 @@ internal class ImageDisplayViewModel : ViewModelBase, IDisplayViewModel
         private set => SetProperty(ref _image, value);
     }
 
+    public string Name { get; set; } = "";
     public string Notes { get; set; } = "";
+    public IRelayCommand OpenImageCommand { get; }
     public string Path { get; init; } = "";
     public ICollection<KeyValuePair<Guid, string>> Persons { get; init; } = Array.Empty<KeyValuePair<Guid, string>>();
-    public string Name { get; set; } = "";
-
 
     protected override async void LoadCommand_Execute()
     {
