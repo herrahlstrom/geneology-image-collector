@@ -78,6 +78,7 @@ namespace GeneologyImageCollector
          _ = Task.Run(async () =>
          {
             await fileManagement.FindNewFilesAsync();
+            await fileManagement.FindMissingFilesAsync();
          });
 
          return Task.CompletedTask;
