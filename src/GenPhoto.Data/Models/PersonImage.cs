@@ -2,6 +2,7 @@
 
 namespace GenPhoto.Data.Models;
 
+[Table("PersonImage")]
 public class PersonImage
 {
     [Column("image")]
