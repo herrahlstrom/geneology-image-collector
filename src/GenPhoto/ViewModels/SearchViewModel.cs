@@ -4,51 +4,70 @@ namespace GenPhoto.ViewModels;
 
 internal class SearchViewModel<T> : ViewModelBase
 {
-    private readonly List<T> m_items;
-    private string m_searchFilter = "";
-    private string[] m_searchFilterArray = Array.Empty<string>();
+   private readonly List<T> m_items;
+   private T? _selectedItem;
 
-    public SearchViewModel()
-    {
-        m_items = new List<T>();
+   private Action<T>? _selectedItemCallback;
+   private string m_searchFilter = "";
 
-        Items = new ListCollectionView(m_items)
-        {
-            Filter = FilterItems
-        };
+   private string[] m_searchFilterArray = Array.Empty<string>();
 
-        PropertyChanged += OnPropertyChanged;
-    }
+   public SearchViewModel()
+   {
+      m_items = new List<T>();
 
-    public string Filter
-    {
-        get => m_searchFilter;
-        set => SetProperty(ref m_searchFilter, value);
-    }
+      Items = new ListCollectionView(m_items)
+      {
+         Filter = FilterItems
+      };
 
-    public ListCollectionView Items { get; }
+      PropertyChanged += OnPropertyChanged;
+   }
+   public string Filter
+   {
+      get => m_searchFilter;
+      set => SetProperty(ref m_searchFilter, value);
+   }
 
-    public void UpdateItems(IEnumerable<T> items)
-    {
-        m_items.Clear();
-        m_items.AddRange(items);
+   public ListCollectionView Items { get; }
 
-        Items.Refresh();
-    }
+   public T? SelectedItem
+   {
+      get { return _selectedItem; }
+      set { SetProperty(ref _selectedItem, value); }
+   }
 
-    private bool FilterItems(object obj)
-    {
-        return obj is IListItem item && m_searchFilterArray.Length > 0 && item.Filter(m_searchFilterArray);
-    }
+   public Action<T>? SelectedItemCallback
+   {
+      get { return _selectedItemCallback; }
+      init { _selectedItemCallback = value; }
+   }
+   public void UpdateItems(IEnumerable<T> items)
+   {
+      m_items.Clear();
+      m_items.AddRange(items);
 
-    private void OnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(Filter))
-        {
-            m_searchFilterArray = string.IsNullOrWhiteSpace(Filter)
-                ? Array.Empty<string>()
-                : Filter.Split(" ", StringSplitOptions.RemoveEmptyEntries);
-            Items.Refresh();
-        }
-    }
+      Items.Refresh();
+   }
+
+   private bool FilterItems(object obj)
+   {
+      return obj is IListItem item && m_searchFilterArray.Length > 0 && item.Filter(m_searchFilterArray);
+   }
+
+   private void OnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+   {
+      if (e.PropertyName == nameof(Filter))
+      {
+         m_searchFilterArray = string.IsNullOrWhiteSpace(Filter)
+             ? Array.Empty<string>()
+             : Filter.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+         Items.Refresh();
+      }
+
+      if(e.PropertyName == nameof(SelectedItem) && SelectedItem is { } item)
+      {
+         SelectedItemCallback?.Invoke(item);
+      }
+   }
 }

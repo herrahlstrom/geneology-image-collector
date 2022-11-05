@@ -14,15 +14,25 @@ internal interface IMainViewModel : ILoadableViewModel
 internal class MainViewModel : ViewModelBase, IMainViewModel
 {
     private readonly IDbContextFactory<AppDbContext> m_dbFactory;
-    private readonly DisplayViewModelRepository displayViewModelRepository;
 
     public MainViewModel(IDbContextFactory<AppDbContext> dbFactory, DisplayViewModelRepository displayViewModelRepository)
     {
         m_dbFactory = dbFactory;
-        this.displayViewModelRepository = displayViewModelRepository;
+
         DisplayItems = new HistoryHolder<IDisplayViewModel>();
 
-        Search = new SearchViewModel<IListItem>();
+        Search = new SearchViewModel<IListItem>()
+        {
+           SelectedItemCallback = async (item) =>
+           {
+              DisplayItems.Add(item switch
+              {
+                 PersonListItem person => displayViewModelRepository.GetPersonDisplayViewModel(person.Id),
+                 ImageListItem image => await displayViewModelRepository.GetImageDisplayViewModelAsync(image.Id),
+                 _ => throw new NotSupportedException()
+              });
+           }
+        };
     }
 
     public HistoryHolder<IDisplayViewModel> DisplayItems { get; }
@@ -31,21 +41,6 @@ internal class MainViewModel : ViewModelBase, IMainViewModel
     protected override async void LoadCommand_Execute()
     {
         await UpdateSearchItems();
-
-        DisplayItems.Add(new PersonDisplayViewModel
-        {
-            Name = $"Person {DateTime.UtcNow}"
-        });
-
-        await foreach(var randomId in displayViewModelRepository.GetRandomImageId(10))
-        {
-            DisplayItems.Add(await displayViewModelRepository.GetImageDisplayViewModelAsync(randomId));
-        }
-
-        DisplayItems.Add(new PersonDisplayViewModel
-        {
-            Name = $"Person {DateTime.UtcNow}"
-        });
     }
 
     private async Task UpdateSearchItems()
