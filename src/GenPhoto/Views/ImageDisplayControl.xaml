@@ -1,0 +1,44 @@
+﻿<UserControl x:Class="GenPhoto.Views.ImageDisplayControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:behaviors="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:GenPhoto.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance viewModels:ImageDisplayViewModel}"
+             d:DesignHeight="450" d:DesignWidth="800"
+             DataContextChanged="UserControl_DataContextChanged">
+
+    <StackPanel>
+        <TextBlock Text="{Binding Path}" FontStyle="Italic" TextWrapping="Wrap" />
+
+        <ItemsControl ItemsSource="{Binding Persons}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0,0,15,2">
+                        <TextBlock Text="{Binding Value}" />
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel>
+            <TextBlock>
+                <Hyperlink Command="{Binding OpenImageCommand}">
+                    Öppna ⧉
+                </Hyperlink>
+            </TextBlock>
+        <Image Source="{Binding Image}" RenderOptions.BitmapScalingMode="HighQuality" MaxHeight="800" />
+        </StackPanel>
+
+        <TextBlock Text="{Binding Notes}" TextWrapping="Wrap" />
+
+        <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" Foreground="Tomato" FontWeight="DemiBold" FontSize="16" />
+    </StackPanel>
+</UserControl>

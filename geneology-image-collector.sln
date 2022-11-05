@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeneologyImageCollector", "src\GeneologyImageCollector.csproj", "{9EF15CA2-969B-4911-80FB-D26860AA6123}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenPhoto", "src\GenPhoto\GenPhoto.csproj", "{9EF15CA2-969B-4911-80FB-D26860AA6123}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{1768B8B1-3B7D-448C-B7FB-2E691F599D88}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenPhoto.Data.Test", "tests\GenPhoto.Data.Test\GenPhoto.Data.Test.csproj", "{027C06A9-A677-4B27-A6ED-51D3F246C004}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +22,12 @@ Global
 		{9EF15CA2-969B-4911-80FB-D26860AA6123}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9EF15CA2-969B-4911-80FB-D26860AA6123}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9EF15CA2-969B-4911-80FB-D26860AA6123}.Release|Any CPU.Build.0 = Release|Any CPU
+		{027C06A9-A677-4B27-A6ED-51D3F246C004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{027C06A9-A677-4B27-A6ED-51D3F246C004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{027C06A9-A677-4B27-A6ED-51D3F246C004}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{027C06A9-A677-4B27-A6ED-51D3F246C004}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{027C06A9-A677-4B27-A6ED-51D3F246C004} = {1768B8B1-3B7D-448C-B7FB-2E691F599D88}
 	EndGlobalSection
 EndGlobal
