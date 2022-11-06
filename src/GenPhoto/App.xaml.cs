@@ -78,6 +78,8 @@ namespace GenPhoto
       {
          var fileManagement = AppHost.Services.GetRequiredService<Maintenance>();
 
+            fileManagement.UpdateImageMeta().GetAwaiter().GetResult();
+
          _ = Task.Run(async () =>
          {
             await fileManagement.FindNewFilesAsync();

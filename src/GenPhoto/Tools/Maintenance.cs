@@ -1,5 +1,6 @@
 ﻿using GenPhoto.Data;
 using GenPhoto.Models;
+using GenPhoto.Parser;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 
@@ -69,6 +70,51 @@ namespace GenPhoto.Tools
             }
 
             await db.SaveChangesAsync();
+        }
+
+        public async Task UpdateImageMeta()
+        {
+            using var db = await _dbFactory.CreateDbContextAsync();
+
+            var images = await (from image in db.Images
+                                where db.ImageMeta.Any(x => x.ImageId == image.Id) == false
+                                select new
+                                {
+                                    image.Id,
+                                    image.Path
+                                }).ToListAsync();
+
+            bool anyUpdate = false;
+            foreach (var image in images)
+            {
+                if (await db.ImageMeta.Where(x => x.ImageId == image.Id).AnyAsync())
+                {
+                    continue;
+                }
+
+                if (!image.Path.StartsWith("Källor\\"))
+                {
+                    continue;
+                }
+
+                var meta = MetaParser.GetMetaFromPath(image.Path).ToList();
+                if (meta.Count > 0)
+                {
+                    db.ImageMeta.AddRange(meta.Select(x => new Data.Models.ImageMeta
+                    {
+                        ImageId = image.Id,
+                        Modified = DateTime.UtcNow,
+                        Key = x.Key,
+                        Value = x.Value
+                    }));
+                    anyUpdate = true;
+                }
+            }
+
+            if (anyUpdate)
+            {
+                await db.SaveChangesAsync();
+            }
         }
 
         private static List<string> SearchFiles(DirectoryInfo dir, string relativePath)
