@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace GenPhoto;
+namespace GenPhoto.Tools;
 
 internal class ImageLoader
 {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-namespace GenPhoto;
+namespace GenPhoto.Models;
 
 internal class AppSettings
 {

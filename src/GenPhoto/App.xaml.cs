@@ -1,4 +1,7 @@
 ﻿using GenPhoto.Data;
+using GenPhoto.Models;
+using GenPhoto.Repositories;
+using GenPhoto.Tools;
 using GenPhoto.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -9,10 +12,10 @@ using System.Windows;
 
 namespace GenPhoto
 {
-   /// <summary>
-   /// Interaction logic for App.xaml
-   /// </summary>
-   public partial class App : Application, IServiceProvider
+    /// <summary>
+    /// Interaction logic for App.xaml
+    /// </summary>
+    public partial class App : Application, IServiceProvider
    {
       public App()
       {

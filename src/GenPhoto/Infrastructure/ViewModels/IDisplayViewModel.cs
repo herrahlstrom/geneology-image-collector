@@ -1,4 +1,4 @@
-﻿namespace GenPhoto.ViewModels;
+﻿namespace GenPhoto.Infrastructure.ViewModels;
 
 internal interface IDisplayViewModel
 {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 
-namespace GenPhoto;
+namespace GenPhoto.Helpers;
 
 internal class ServiceLocator : IServiceProvider
 {
@@ -15,7 +15,7 @@ internal class ServiceLocator : IServiceProvider
 
     public object? GetService(Type serviceType)
     {
-        var serviceProvider = System.Windows.Application.Current as IServiceProvider
+        var serviceProvider = Application.Current as IServiceProvider
             ?? throw new InvalidOperationException($"Current {nameof(App)} is not implementing {nameof(IServiceProvider)}");
 
         return serviceProvider.GetService(serviceType);

@@ -1,4 +1,5 @@
-﻿using GenPhoto.ViewModels;
+﻿using GenPhoto.Helpers;
+using GenPhoto.ViewModels;
 using System.Windows;
 
 namespace GenPhoto

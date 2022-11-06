@@ -1,4 +1,6 @@
-﻿namespace GenPhoto.ViewModels;
+﻿using GenPhoto.Infrastructure.ViewModels;
+
+namespace GenPhoto.ViewModels;
 
 internal class PersonDisplayViewModel : ViewModelBase, IDisplayViewModel
 {

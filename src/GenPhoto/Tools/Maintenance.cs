@@ -1,8 +1,9 @@
 ﻿using GenPhoto.Data;
+using GenPhoto.Models;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 
-namespace GenPhoto
+namespace GenPhoto.Tools
 {
     internal class Maintenance
     {
@@ -11,7 +12,7 @@ namespace GenPhoto
 
         public Maintenance(IDbContextFactory<AppDbContext> dbFactory, AppSettings settings)
         {
-            this._dbFactory = dbFactory;
+            _dbFactory = dbFactory;
             _settings = settings;
         }
 

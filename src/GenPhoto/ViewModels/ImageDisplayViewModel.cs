@@ -1,4 +1,6 @@
 ﻿using GenPhoto.Infrastructure;
+using GenPhoto.Infrastructure.ViewModels;
+using GenPhoto.Tools;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Media;

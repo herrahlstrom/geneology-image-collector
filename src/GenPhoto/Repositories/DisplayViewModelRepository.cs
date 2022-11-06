@@ -1,9 +1,10 @@
 ﻿using GenPhoto.Data;
+using GenPhoto.Tools;
 using GenPhoto.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 
-namespace GenPhoto;
+namespace GenPhoto.Repositories;
 
 internal class DisplayViewModelRepository
 {
@@ -54,7 +55,7 @@ internal class DisplayViewModelRepository
 
     public async Task<PersonDisplayViewModel> GetPersonDisplayViewModel(Guid id)
     {
-       using var db = await dbFactory.CreateDbContextAsync();
+        using var db = await dbFactory.CreateDbContextAsync();
 
         var entity = await (from e in db.Persons
                             where e.Id == id

@@ -1,6 +1,6 @@
 ﻿using System.Windows.Media;
 
-namespace GenPhoto.ViewModels;
+namespace GenPhoto.Infrastructure;
 
 internal interface IListItem
 {

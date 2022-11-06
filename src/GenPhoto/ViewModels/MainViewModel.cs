@@ -1,6 +1,7 @@
 ﻿using GenPhoto.Data;
 using GenPhoto.Infrastructure;
 using GenPhoto.Infrastructure.ViewModels;
+using GenPhoto.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System.Windows.Input;
 

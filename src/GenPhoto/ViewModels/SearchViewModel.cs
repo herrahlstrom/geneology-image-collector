@@ -1,4 +1,5 @@
 ﻿using System.Windows.Data;
+using GenPhoto.Infrastructure;
 
 namespace GenPhoto.ViewModels;
 
