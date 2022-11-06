@@ -4,12 +4,12 @@ using System.IO;
 
 namespace GenPhoto
 {
-    internal class FileManagement
+    internal class Maintenance
     {
         private readonly IDbContextFactory<AppDbContext> _dbFactory;
         private readonly AppSettings _settings;
 
-        public FileManagement(IDbContextFactory<AppDbContext> dbFactory, AppSettings settings)
+        public Maintenance(IDbContextFactory<AppDbContext> dbFactory, AppSettings settings)
         {
             this._dbFactory = dbFactory;
             _settings = settings;

@@ -44,7 +44,7 @@ namespace GenPhoto
                 // Helpers etc.
                 services
                     .AddSingleton<ImageLoader>()
-                    .AddSingleton<FileManagement>();
+                    .AddSingleton<Maintenance>();
              }).Build();
       }
 
@@ -73,7 +73,7 @@ namespace GenPhoto
 
       private Task StartRutine()
       {
-         var fileManagement = AppHost.Services.GetRequiredService<FileManagement>();
+         var fileManagement = AppHost.Services.GetRequiredService<Maintenance>();
 
          _ = Task.Run(async () =>
          {
