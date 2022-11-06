@@ -27,7 +27,7 @@ internal class MainViewModel : ViewModelBase, IMainViewModel
            {
               DisplayItems.Add(item switch
               {
-                 PersonListItem person => displayViewModelRepository.GetPersonDisplayViewModel(person.Id),
+                 PersonListItem person => await displayViewModelRepository.GetPersonDisplayViewModel(person.Id),
                  ImageListItem image => await displayViewModelRepository.GetImageDisplayViewModelAsync(image.Id),
                  _ => throw new NotSupportedException()
               });

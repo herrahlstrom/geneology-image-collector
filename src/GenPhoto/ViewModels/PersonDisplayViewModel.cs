@@ -2,5 +2,6 @@
 
 internal class PersonDisplayViewModel : ViewModelBase, IDisplayViewModel
 {
-    public string Name { get; set; } = nameof(ImageDisplayViewModel);
+    public Guid Id { get; init; }
+   public string Name { get; set; } = "";
 }

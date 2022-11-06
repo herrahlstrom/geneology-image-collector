@@ -52,9 +52,23 @@ internal class DisplayViewModelRepository
         };
     }
 
-    public PersonDisplayViewModel GetPersonDisplayViewModel(Guid id)
+    public async Task<PersonDisplayViewModel> GetPersonDisplayViewModel(Guid id)
     {
-        throw new NotImplementedException();
+       using var db = await dbFactory.CreateDbContextAsync();
+
+        var entity = await (from e in db.Persons
+                            where e.Id == id
+                            select new
+                            {
+                                e.Id,
+                                e.Name
+                            }).FirstAsync();
+
+        return new PersonDisplayViewModel()
+        {
+            Id = entity.Id,
+            Name = entity.Name
+        };
     }
 
     public async IAsyncEnumerable<Guid> GetRandomImageId(int count)
