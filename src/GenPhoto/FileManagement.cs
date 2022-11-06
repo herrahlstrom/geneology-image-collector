@@ -6,51 +6,22 @@ namespace GenPhoto
 {
     internal class FileManagement
     {
-        private readonly AppDbContext _db;
+        private readonly IDbContextFactory<AppDbContext> _dbFactory;
         private readonly AppSettings _settings;
 
-        public FileManagement(AppSettings settings, AppDbContext db)
+        public FileManagement(IDbContextFactory<AppDbContext> dbFactory, AppSettings settings)
         {
+            this._dbFactory = dbFactory;
             _settings = settings;
-            _db = db;
-        }
-
-        public async Task FindNewFilesAsync()
-        {
-            var files = SearchFiles(new DirectoryInfo(_settings.RootPath), "");
-
-            var dbFiles = (await _db.Images.Select(x => x.Path).ToListAsync()).ToHashSet();
-
-            var newFiles = files.Where(x => !dbFiles.Contains(x)).ToList();
-            if (newFiles.Count == 0)
-            {
-                return;
-            }
-
-            var defualtImageTypeId = await _db.ImageTypes.Where(x => x.Key == "").Select(x => x.Id).SingleAsync();
-
-            foreach (var file in newFiles)
-            {
-                Data.Models.Image entity = new()
-                {
-                    Id = Guid.NewGuid(),
-                    Added = DateTime.UtcNow,
-                    Title = Path.GetFileName(file),
-                    Path = file,
-                    TypeId = defualtImageTypeId,
-                    Notes = "",
-                };
-                _db.Images.Add(entity);
-            }
-
-            await _db.SaveChangesAsync();
         }
 
         public async Task FindMissingFilesAsync()
         {
+            using var db = await _dbFactory.CreateDbContextAsync();
+
             var files = SearchFiles(new DirectoryInfo(_settings.RootPath), "").ToHashSet();
 
-            var dbFiles = await _db.Images.ToListAsync();
+            var dbFiles = await db.Images.ToListAsync();
 
             var missingFiles = dbFiles.Where(x => files.Contains(x.Path)).ToList();
             if (missingFiles.Count == 0)
@@ -63,7 +34,40 @@ namespace GenPhoto
                 entiry.Missing = true;
             }
 
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
+        }
+
+        public async Task FindNewFilesAsync()
+        {
+            using var db = await _dbFactory.CreateDbContextAsync();
+
+            var files = SearchFiles(new DirectoryInfo(_settings.RootPath), "");
+
+            var dbFiles = (await db.Images.Select(x => x.Path).ToListAsync()).ToHashSet();
+
+            var newFiles = files.Where(x => !dbFiles.Contains(x)).ToList();
+            if (newFiles.Count == 0)
+            {
+                return;
+            }
+
+            var defualtImageTypeId = await db.ImageTypes.Where(x => x.Key == "").Select(x => x.Id).SingleAsync();
+
+            foreach (var file in newFiles)
+            {
+                Data.Models.Image entity = new()
+                {
+                    Id = Guid.NewGuid(),
+                    Added = DateTime.UtcNow,
+                    Title = Path.GetFileName(file),
+                    Path = file,
+                    TypeId = defualtImageTypeId,
+                    Notes = "",
+                };
+                db.Images.Add(entity);
+            }
+
+            await db.SaveChangesAsync();
         }
 
         private static List<string> SearchFiles(DirectoryInfo dir, string relativePath)
