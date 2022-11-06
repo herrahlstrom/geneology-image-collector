@@ -1,9 +1,9 @@
 ﻿<Application x:Class="GenPhoto.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:GenPhoto"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
+             xmlns:helpers="clr-namespace:GenPhoto.Helpers"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
-        <local:ServiceLocator x:Key="ServiceLocator"></local:ServiceLocator>
+        <helpers:ServiceLocator x:Key="ServiceLocator"></helpers:ServiceLocator>
     </Application.Resources>
 </Application>

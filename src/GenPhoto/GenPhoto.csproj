@@ -28,6 +28,8 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\GenPhoto.Data\GenPhoto.Data.csproj" />
+		<ProjectReference Include="..\GenPhoto.Parser\GenPhoto.Parser.csproj" />
+		<ProjectReference Include="..\GenPhoto.Shared\GenPhoto.Shared.csproj" />
 	</ItemGroup>
 
 </Project>

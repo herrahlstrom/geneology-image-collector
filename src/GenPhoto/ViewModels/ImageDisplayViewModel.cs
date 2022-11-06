@@ -1,6 +1,6 @@
-﻿using GenPhoto.Infrastructure;
+﻿using GenPhoto.Helpers;
+using GenPhoto.Infrastructure;
 using GenPhoto.Infrastructure.ViewModels;
-using GenPhoto.Tools;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Media;
@@ -39,6 +39,7 @@ internal class ImageDisplayViewModel : ViewModelBase, IDisplayViewModel
     public IRelayCommand OpenImageCommand { get; }
     public string Path { get; init; } = "";
     public ICollection<KeyValuePair<Guid, string>> Persons { get; init; } = Array.Empty<KeyValuePair<Guid, string>>();
+    public ICollection<KeyValuePair<string, string>> Meta { get; init; } = Array.Empty<KeyValuePair<string, string>>();
 
     protected override async void LoadCommand_Execute()
     {
