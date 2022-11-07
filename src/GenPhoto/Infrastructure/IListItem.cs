@@ -1,9 +1,9 @@
-﻿using System.Windows.Media;
-
-namespace GenPhoto.Infrastructure;
+﻿namespace GenPhoto.Infrastructure;
 
 internal interface IListItem
 {
+    string SortKey { get; }
+
     bool Filter(string[] words) => words.All(Filter);
 
     bool Filter(string word);

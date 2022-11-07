@@ -19,7 +19,7 @@ internal class ImageLoader
 
         if (!File.Exists(tempPath))
         {
-            throw new NotImplementedException();
+            ImageProcessor.ResizeImage(fullPath, tempPath, maxSize);
         }
 
         return new BitmapImage(new Uri(tempPath));

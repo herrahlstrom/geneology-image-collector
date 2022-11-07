@@ -1,7 +1,7 @@
 ﻿using GenPhoto.Data;
+using GenPhoto.Extensions;
 using GenPhoto.Helpers;
 using GenPhoto.Models;
-using GenPhoto.Shared;
 using GenPhoto.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
@@ -44,14 +44,6 @@ internal class DisplayViewModelRepository
                                  p.Name
                              }).ToListAsync();
 
-        var meta = await (from imgMeta in db.ImageMeta
-                             where imgMeta.ImageId == id
-                             select new
-                             {
-                                 imgMeta.Key,
-                                 imgMeta.Value
-                             }).ToListAsync();
-
         return new ImageDisplayViewModel(imageLoader)
         {
             Id = entity.Id,
@@ -60,50 +52,8 @@ internal class DisplayViewModelRepository
             Path = entity.Path,
             FullPath = Path.Combine(settings.RootPath, entity.Path),
             Persons = persons.ConvertAll(x => new KeyValuePair<Guid, string>(x.Id, x.Name)),
-            Meta = meta.Select(x=> new
-            {
-                Key = GetMetaDisplayKey(x.Key),
-                x.Value,
-                Sort = GetMetaSortValue(x.Key)
-            }).OrderBy(x=> x.Sort).Select(x => new KeyValuePair<string, string>(x.Key, x.Value)).ToList(),
+            Meta = await GetImageMeta(db, id),
         };
-
-        int GetMetaSortValue(string metaKey)
-        {
-            return metaKey switch
-            {
-                null => 0,
-                "" => 0,
-                
-                ImageMetaKeys.Repository => 1,
-                ImageMetaKeys.Volume => 2,
-
-                ImageMetaKeys.Year => 3,
-                ImageMetaKeys.Image => 4,
-                ImageMetaKeys.Page => 5,
-                ImageMetaKeys.Location => 6,
-                ImageMetaKeys.Reference => 7,
-
-                _ => int.MaxValue
-            };
-        }
-
-        string GetMetaDisplayKey(string metaKey)
-        {
-            return metaKey switch
-            {
-                ImageMetaKeys.Repository => "Arkiv",
-                ImageMetaKeys.Volume => "Volym",
-
-                ImageMetaKeys.Year => "År",
-                ImageMetaKeys.Image => "Bild",
-                ImageMetaKeys.Page => "Sida",
-                ImageMetaKeys.Location => "PLats",
-                ImageMetaKeys.Reference => "Referens",
-
-                _ => metaKey
-            };
-        }
     }
 
     public async Task<PersonDisplayViewModel> GetPersonDisplayViewModel(Guid id)
@@ -118,11 +68,35 @@ internal class DisplayViewModelRepository
                                 e.Name
                             }).FirstAsync();
 
-        return new PersonDisplayViewModel()
+        var images = await (from personImage in db.PersonImages
+                            join image in db.Images on personImage.ImageId equals image.Id
+                            where personImage.PersonId == id
+                            select new
+                            {
+                                image.Id,
+                                image.Title,
+                                image.Path
+                            }).ToListAsync();
+
+        List<PersonImageItemViewModel> imageViewModels = new(images.Count);
+        foreach (var img in images)
         {
-            Id = entity.Id,
-            Name = entity.Name
-        };
+            MetaCollection meta = await GetImageMeta(db, img.Id);
+
+            imageViewModels.Add(new PersonImageItemViewModel()
+            {
+                Id = img.Id,
+                FullPath = Path.Combine(settings.RootPath, img.Path),
+                Title = img.Title,
+                Meta = meta,
+                SortKey = meta.GetSortKey()
+            });
+        }
+
+        return new PersonDisplayViewModel(imageLoader,
+            id: entity.Id,
+            name: entity.Name,
+            items: imageViewModels);
     }
 
     public async IAsyncEnumerable<Guid> GetRandomImageId(int count)
@@ -135,5 +109,30 @@ internal class DisplayViewModelRepository
             count--;
             yield return ids[Random.Shared.Next(0, ids.Count)];
         }
+    }
+
+    private static async Task<MetaCollection> GetImageMeta(AppDbContext db, Guid id)
+    {
+        List<MetaItem> meta = new();
+        meta.AddRange(await (from imgMeta in db.ImageMeta
+                             where imgMeta.ImageId == id
+                             join metaKey in db.ImageMetaKey on imgMeta.Key equals metaKey.Key
+                             orderby metaKey.Sort
+                             select new MetaItem
+                             {
+                                 Key = imgMeta.Key,
+                                 DisplayKey = metaKey.DisplayText,
+                                 Value = imgMeta.Value
+                             }).ToListAsync());
+        meta.AddRange(await (from imgMeta in db.ImageMeta
+                             where imgMeta.ImageId == id
+                             where !db.ImageMetaKey.Any(x => x.Key == imgMeta.Key)
+                             select new MetaItem
+                             {
+                                 Key = imgMeta.Key,
+                                 DisplayKey = imgMeta.Key,
+                                 Value = imgMeta.Value
+                             }).ToListAsync());
+        return new MetaCollection(meta);
     }
 }

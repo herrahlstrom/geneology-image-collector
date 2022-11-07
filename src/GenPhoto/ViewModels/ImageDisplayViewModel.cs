@@ -34,12 +34,12 @@ internal class ImageDisplayViewModel : ViewModelBase, IDisplayViewModel
         private set => SetProperty(ref _image, value);
     }
 
+    public MetaCollection Meta { get; init; } = MetaCollection.Empty;
     public string Name { get; set; } = "";
     public string Notes { get; set; } = "";
     public IRelayCommand OpenImageCommand { get; }
     public string Path { get; init; } = "";
     public ICollection<KeyValuePair<Guid, string>> Persons { get; init; } = Array.Empty<KeyValuePair<Guid, string>>();
-    public ICollection<KeyValuePair<string, string>> Meta { get; init; } = Array.Empty<KeyValuePair<string, string>>();
 
     protected override async void LoadCommand_Execute()
     {

@@ -45,7 +45,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Margin="0,0,0,10">
-                            <TextBlock Text="{Binding Key}" FontWeight="DemiBold" />
+                            <TextBlock Text="{Binding DisplayKey}" FontWeight="DemiBold" />
                             <TextBlock Text="{Binding Value}" Margin="5,0,0,0" />
                         </StackPanel>
                     </DataTemplate>

@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     { }
 
     public DbSet<ImageMeta> ImageMeta { get; set; } = null!;
+    public DbSet<ImageMetaKey> ImageMetaKey { get; set; } = null!;
     public DbSet<Image> Images { get; set; } = null!;
     public DbSet<ImageType> ImageTypes { get; set; } = null!;
     public DbSet<PersonImage> PersonImages { get; set; } = null!;
@@ -46,6 +47,17 @@ public class AppDbContext : DbContext
             entity.Property(exp => exp.Key).HasColumnName("key");
             entity.Property(exp => exp.Value).HasColumnName("value");
             entity.Property(exp => exp.Modified).HasColumnName("modified");
+        });
+
+        modelBuilder.Entity<ImageMetaKey>(entity =>
+        {
+            entity
+                .ToTable("ImageMetaKey")
+                .HasKey(x => x.Key);
+
+            entity.Property(exp => exp.Key).HasColumnName("key");
+            entity.Property(exp => exp.Sort).HasColumnName("sort");
+            entity.Property(exp => exp.DisplayText).HasColumnName("display_text");
         });
 
         modelBuilder.Entity<Person>(entity =>
