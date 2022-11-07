@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+   <ItemGroup>
+      <None Include="C:\Users\ahlmar\source\github\herrahlstrom\geneology-image-collector\.editorconfig" />
+   </ItemGroup>
+
 </Project>

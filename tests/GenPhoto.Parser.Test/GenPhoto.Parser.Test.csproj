@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\src\GenPhoto.Parser\GenPhoto.Parser.csproj" />
   </ItemGroup>
 
+   <ItemGroup>
+      <None Include="C:\Users\ahlmar\source\github\herrahlstrom\geneology-image-collector\.editorconfig" />
+   </ItemGroup>
+
 </Project>

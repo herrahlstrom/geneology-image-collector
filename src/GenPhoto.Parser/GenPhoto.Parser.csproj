@@ -10,4 +10,8 @@
     <ProjectReference Include="..\GenPhoto.Shared\GenPhoto.Shared.csproj" />
   </ItemGroup>
 
+   <ItemGroup>
+      <None Include="C:\Users\ahlmar\source\github\herrahlstrom\geneology-image-collector\.editorconfig" />
+   </ItemGroup>
+
 </Project>
