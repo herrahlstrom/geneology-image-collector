@@ -7,7 +7,7 @@
   </PropertyGroup>
 
    <ItemGroup>
-      <None Include="C:\Users\ahlmar\source\github\herrahlstrom\geneology-image-collector\.editorconfig" />
+	   <None Include="..\..\.editorconfig" Link=".editorconfig" />
    </ItemGroup>
 
 </Project>
