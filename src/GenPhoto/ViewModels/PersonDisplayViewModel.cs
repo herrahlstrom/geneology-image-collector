@@ -8,7 +8,7 @@ namespace GenPhoto.ViewModels;
 internal class PersonDisplayViewModel : ViewModelBase, IDisplayViewModel
 {
     private readonly ImageLoader _imageLoader;
-    private readonly Queue<PersonImageItemViewModel> _loadQueue = new();
+    private readonly Queue<PersonImageItemViewModel> _loadImageQueue;
 
     public PersonDisplayViewModel(ImageLoader imageLoader, Guid id, string name, IEnumerable<PersonImageItemViewModel> items)
     {
@@ -16,17 +16,7 @@ internal class PersonDisplayViewModel : ViewModelBase, IDisplayViewModel
         Id = id;
         Name = name;
 
-        foreach (var item in items)
-        {
-            FilteredImageViewModel.AddItem(item);
-
-            if (item.Image is null)
-            {
-                _loadQueue.Enqueue(item);
-            }
-        }
-
-        FilteredImageViewModel.Items.Refresh();
+        _loadImageQueue = new(items);
     }
 
     public SearchViewModel<PersonImageItemViewModel> FilteredImageViewModel { get; } = new() { AllItemsOnEmptyFilter = true };
@@ -35,9 +25,11 @@ internal class PersonDisplayViewModel : ViewModelBase, IDisplayViewModel
 
     protected override void LoadCommand_Execute()
     {
-        foreach (var image in _loadQueue)
+        while (_loadImageQueue.TryDequeue(out var item))
         {
-            image.Image = _imageLoader.GetImageSource(image.Id, image.FullPath, new System.Drawing.Size(200, 200));
+            item.Image ??= _imageLoader.GetImageSource(item.Id, item.FullPath, new(200, 200));
+            FilteredImageViewModel.AddItem(item);
+            FilteredImageViewModel.Items.Refresh();
         }
     }
 }
@@ -45,8 +37,8 @@ internal class PersonDisplayViewModel : ViewModelBase, IDisplayViewModel
 internal class PersonImageItemViewModel : ViewModelBase, IListItem
 {
     private ImageSource? _image = null;
-    public string FullPath { get; init; } = "";
-    public Guid Id { get; init; }
+    public required string FullPath { get; init; }
+    public required Guid Id { get; init; }
 
     public ImageSource? Image
     {
@@ -55,9 +47,8 @@ internal class PersonImageItemViewModel : ViewModelBase, IListItem
     }
 
     public MetaCollection Meta { get; init; } = MetaCollection.Empty;
-    public string Title { get; set; } = "";
-
-    public string SortKey { get; init; } = "";
+    public required string SortKey { get; init; }
+    public required string Title { get; set; }
 
     public bool Filter(string word)
     {
