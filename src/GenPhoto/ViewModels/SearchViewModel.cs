@@ -1,14 +1,16 @@
 ﻿using GenPhoto.Infrastructure;
 using System.ComponentModel;
+using System.Timers;
 using System.Windows.Data;
+using System.Windows.Threading;
 
 namespace GenPhoto.ViewModels;
 
 internal class SearchViewModel<T> : ViewModelBase where T : IListItem
 {
     private readonly List<T> m_items;
+    private Timer _inputTimer;
     private T? _selectedItem;
-
     private Action<T>? _selectedItemCallback;
     private string m_searchFilter = "";
 
@@ -17,6 +19,11 @@ internal class SearchViewModel<T> : ViewModelBase where T : IListItem
     public SearchViewModel()
     {
         m_items = new List<T>();
+        _inputTimer = new()
+        {
+            Interval = TimeSpan.FromMilliseconds(400).TotalMilliseconds,
+            AutoReset = false
+        };
 
         Items = new ListCollectionView(m_items)
         {
@@ -26,6 +33,8 @@ internal class SearchViewModel<T> : ViewModelBase where T : IListItem
         Items.SortDescriptions.Add(new SortDescription(nameof(IListItem.SortKey), ListSortDirection.Ascending));
 
         PropertyChanged += OnPropertyChanged;
+
+        _inputTimer.Elapsed += (_, _) => App.Current.Dispatcher.Invoke(() => Items.Refresh());
     }
 
     public bool AllItemsOnEmptyFilter { get; set; } = false;
@@ -88,10 +97,11 @@ internal class SearchViewModel<T> : ViewModelBase where T : IListItem
     {
         if (e.PropertyName == nameof(Filter))
         {
+            _inputTimer.Enabled = false;
             m_searchFilterArray = string.IsNullOrWhiteSpace(Filter)
                 ? Array.Empty<string>()
                 : Filter.Split(" ", StringSplitOptions.RemoveEmptyEntries);
-            Items.Refresh();
+            _inputTimer.Start();
         }
 
         if (e.PropertyName == nameof(SelectedItem) && SelectedItem is { } item)

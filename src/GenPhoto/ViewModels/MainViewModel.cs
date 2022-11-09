@@ -3,7 +3,6 @@ using GenPhoto.Infrastructure;
 using GenPhoto.Infrastructure.ViewModels;
 using GenPhoto.Repositories;
 using Microsoft.EntityFrameworkCore;
-using System.Windows.Input;
 
 namespace GenPhoto.ViewModels;
 
@@ -24,15 +23,15 @@ internal class MainViewModel : ViewModelBase, IMainViewModel
 
         Search = new SearchViewModel<IListItem>()
         {
-           SelectedItemCallback = async (item) =>
-           {
-              DisplayItems.Add(item switch
-              {
-                 PersonListItem person => await displayViewModelRepository.GetPersonDisplayViewModel(person.Id),
-                 ImageListItem image => await displayViewModelRepository.GetImageDisplayViewModelAsync(image.Id),
-                 _ => throw new NotSupportedException()
-              });
-           }
+            SelectedItemCallback = async (item) =>
+            {
+                DisplayItems.Add(item switch
+                {
+                    PersonListItem person => await displayViewModelRepository.GetPersonDisplayViewModel(person.Id),
+                    ImageListItem image => await displayViewModelRepository.GetImageDisplayViewModelAsync(image.Id),
+                    _ => throw new NotSupportedException()
+                });
+            }
         };
     }
 
@@ -50,11 +49,16 @@ internal class MainViewModel : ViewModelBase, IMainViewModel
 
         var items = new List<IListItem>();
 
-        items.AddRange(await db.Images.OrderBy(x => x.Title).Select(x => new ImageListItem
-        {
-            Id = x.Id,
-            Title = x.Title
-        }).ToListAsync().ConfigureAwait(true));
+        items.AddRange(await (
+            from img in db.Images
+            join imgType in db.ImageTypes on img.TypeId equals imgType.Id
+            orderby img.Title
+            select new ImageListItem
+            {
+                Id = img.Id,
+                Title = img.Title,
+                TypeKey = imgType.Key
+            }).ToListAsync().ConfigureAwait(true));
 
         items.AddRange(await db.Persons.OrderBy(x => x.Name).Select(x => new PersonListItem
         {
