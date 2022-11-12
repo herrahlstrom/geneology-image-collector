@@ -30,7 +30,12 @@
                                 <ColumnDefinition Width="200" />
                                 <ColumnDefinition />
                             </Grid.ColumnDefinitions>
-                            <Image Grid.Column="0" Source="{Binding Image}" RenderOptions.BitmapScalingMode="HighQuality" MaxHeight="400" />
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                          
+                            <Image Grid.Column="0" Grid.RowSpan="2" Source="{Binding Image}" RenderOptions.BitmapScalingMode="HighQuality" MaxHeight="400" />
 
                             <ItemsControl Grid.Column="1" ItemsSource="{Binding Meta}">
                                 <ItemsControl.ItemsPanel>
@@ -47,6 +52,15 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0">
+                                <TextBlock>
+                                    <Hyperlink Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}, Path=DataContext.OpenImageCommand}"
+                                               CommandParameter="{Binding}">
+                                        Gå till bild ➜
+                                    </Hyperlink>        
+                                </TextBlock>
+                            </StackPanel>
 
                         </Grid>
                     </Border>

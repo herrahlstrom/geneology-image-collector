@@ -47,7 +47,7 @@ namespace GenPhoto
 
                     // Helpers etc.
                     services
-                     .AddSingleton<ImageLoader>()
+                     .AddSingleton<AppState>()
                      .AddSingleton<Maintenance>();
                 }).Build();
         }

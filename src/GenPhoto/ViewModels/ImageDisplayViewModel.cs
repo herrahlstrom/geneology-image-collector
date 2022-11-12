@@ -1,24 +1,21 @@
 ﻿using GenPhoto.Helpers;
 using GenPhoto.Infrastructure;
 using GenPhoto.Infrastructure.ViewModels;
-using System.Drawing;
 using System.Threading;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace GenPhoto.ViewModels;
 
 internal class ImageDisplayViewModel : ViewModelBase, IDisplayViewModel
 {
     private static readonly SemaphoreSlim _loadSemaphore = new(1);
-    private readonly ImageLoader imageLoader;
 
     private ImageSource? _image = null;
     private bool _loaded = false;
 
-    public ImageDisplayViewModel(ImageLoader imageLoader)
+    public ImageDisplayViewModel()
     {
-        this.imageLoader = imageLoader;
-
         OpenImageCommand = new RelayCommand(
             canExecute: () => OpenFileCommand.CanExecute(FullPath),
             execute: () => OpenFileCommand.Execute(FullPath));
@@ -49,27 +46,23 @@ internal class ImageDisplayViewModel : ViewModelBase, IDisplayViewModel
         }
 
         await _loadSemaphore.WaitAsync();
+
+        if (_loaded)
+        {
+            return;
+        }
+
         try
         {
-            if (_loaded)
-            {
-                return;
-            }
-
-            try
-            {
-                Size maxSize = new(1000, 1000);
-                Image = imageLoader.GetImageSource(FullPath);
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = ex.Message;
-            }
-
-            _loaded = true;
+            Image = new BitmapImage(new Uri(FullPath));
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
         }
         finally
         {
+            _loaded = true;
             _loadSemaphore.Release();
         }
     }

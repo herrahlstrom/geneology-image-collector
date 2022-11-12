@@ -2,32 +2,41 @@
 using GenPhoto.Infrastructure;
 using GenPhoto.Infrastructure.ViewModels;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace GenPhoto.ViewModels;
 
 internal class PersonDisplayViewModel : ViewModelBase, IDisplayViewModel
 {
-    private readonly ImageLoader _imageLoader;
     private readonly Queue<PersonImageItemViewModel> _loadImageQueue;
 
-    public PersonDisplayViewModel(ImageLoader imageLoader, Guid id, string name, IEnumerable<PersonImageItemViewModel> items)
+    public PersonDisplayViewModel(AppState appState, Guid id, string name, IEnumerable<PersonImageItemViewModel> items)
     {
-        _imageLoader = imageLoader;
         Id = id;
         Name = name;
 
-        _loadImageQueue = new(items);
+        _loadImageQueue = new(items.OrderBy(x => x.SortKey));
+
+        OpenImageCommand = new RelayCommand<PersonImageItemViewModel>(
+            canExecute: (item) => item != null,
+            execute: (item) => appState.OpenImage(item!.Id));
     }
 
     public SearchViewModel<PersonImageItemViewModel> FilteredImageViewModel { get; } = new() { AllItemsOnEmptyFilter = true };
     public Guid Id { get; }
     public string Name { get; }
+    public IRelayCommand OpenImageCommand { get; }
 
-    protected override void LoadCommand_Execute()
+    protected override async void LoadCommand_Execute()
     {
         while (_loadImageQueue.TryDequeue(out var item))
         {
-            item.Image ??= _imageLoader.GetImageSource(item.Id, item.FullPath, new(200, 200));
+            if (item.Image is null)
+            {
+                var uri = await Task.Run(() => ImageHelper.GetImageDisplayPath(item.Id, item.FullPath, new(200, 200)));
+                item.Image = new BitmapImage(uri);
+            }
+
             FilteredImageViewModel.AddItem(item);
             FilteredImageViewModel.Items.Refresh();
         }

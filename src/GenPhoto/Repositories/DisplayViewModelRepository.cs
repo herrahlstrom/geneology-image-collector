@@ -11,13 +11,14 @@ namespace GenPhoto.Repositories;
 internal class DisplayViewModelRepository
 {
     private readonly IDbContextFactory<AppDbContext> dbFactory;
-    private readonly ImageLoader imageLoader;
     private readonly AppSettings settings;
 
-    public DisplayViewModelRepository(IDbContextFactory<AppDbContext> dbFactory, ImageLoader imageLoader, AppSettings settings)
+    public AppState AppState { get; }
+
+    public DisplayViewModelRepository(AppState appState, IDbContextFactory<AppDbContext> dbFactory, AppSettings settings)
     {
+        AppState = appState;
         this.dbFactory = dbFactory;
-        this.imageLoader = imageLoader;
         this.settings = settings;
     }
 
@@ -44,7 +45,7 @@ internal class DisplayViewModelRepository
                                  p.Name
                              }).ToListAsync();
 
-        return new ImageDisplayViewModel(imageLoader)
+        return new ImageDisplayViewModel()
         {
             Id = entity.Id,
             Name = entity.Title,
@@ -93,7 +94,7 @@ internal class DisplayViewModelRepository
             });
         }
 
-        return new PersonDisplayViewModel(imageLoader,
+        return new PersonDisplayViewModel(AppState,
             id: entity.Id,
             name: entity.Name,
             items: imageViewModels);

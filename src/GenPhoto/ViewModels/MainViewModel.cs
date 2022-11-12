@@ -15,7 +15,7 @@ internal class MainViewModel : ViewModelBase, IMainViewModel
 {
     private readonly IDbContextFactory<AppDbContext> m_dbFactory;
 
-    public MainViewModel(IDbContextFactory<AppDbContext> dbFactory, DisplayViewModelRepository displayViewModelRepository)
+    public MainViewModel(AppState appState, IDbContextFactory<AppDbContext> dbFactory, DisplayViewModelRepository displayViewModelRepository)
     {
         m_dbFactory = dbFactory;
 
@@ -23,16 +23,19 @@ internal class MainViewModel : ViewModelBase, IMainViewModel
 
         Search = new SearchViewModel<IListItem>()
         {
-            SelectedItemCallback = async (item) =>
+            SelectedItemCallback = (item) =>
             {
-                DisplayItems.Add(item switch
+                switch (item)
                 {
-                    PersonListItem person => await displayViewModelRepository.GetPersonDisplayViewModel(person.Id),
-                    ImageListItem image => await displayViewModelRepository.GetImageDisplayViewModelAsync(image.Id),
-                    _ => throw new NotSupportedException()
-                });
+                    case PersonListItem person: appState.OpenPerson(person.Id); break;
+                    case ImageListItem image: appState.OpenImage(image.Id); break;
+                    default: throw new NotSupportedException();
+                }
             }
         };
+
+        appState.OpenImageRequest += async (_, id) => DisplayItems.Add(await displayViewModelRepository.GetImageDisplayViewModelAsync(id));
+        appState.OpenPersonRequest += async (_, id) => DisplayItems.Add(await displayViewModelRepository.GetPersonDisplayViewModel(id));
     }
 
     public HistoryHolder<IDisplayViewModel> DisplayItems { get; }
