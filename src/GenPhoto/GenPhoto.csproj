@@ -9,9 +9,6 @@
 
 	<ItemGroup>
 		<None Remove="appsettings.json" />
-		<None Remove="Resources\image-icon.png" />
-		<None Remove="Resources\library-icon.png" />
-		<None Remove="Resources\man-icon.png" />
 		<None Remove="appsettings.*.json" />
 	</ItemGroup>
 
@@ -22,12 +19,6 @@
 		<Content Include="appsettings.*.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Resource Include="Resources\image-icon.png" />
-	  <Resource Include="Resources\library-icon.png" />
-	  <Resource Include="Resources\man-icon.png" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -44,10 +35,6 @@
 		<ProjectReference Include="..\GenPhoto.Data\GenPhoto.Data.csproj" />
 		<ProjectReference Include="..\GenPhoto.Parser\GenPhoto.Parser.csproj" />
 		<ProjectReference Include="..\GenPhoto.Shared\GenPhoto.Shared.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Converters\" />
 	</ItemGroup>
 
 </Project>

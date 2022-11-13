@@ -1,9 +1,9 @@
 ﻿using GenPhoto.Data;
-using GenPhoto.Helpers;
 using GenPhoto.Models;
 using GenPhoto.Repositories;
 using GenPhoto.Tools;
 using GenPhoto.ViewModels;
+using GenPhoto.Views;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,13 +42,13 @@ namespace GenPhoto
 
                     // View models
                     services
-                        .AddSingleton<DisplayViewModelRepository>()
-                        .AddTransient<IMainViewModel, MainViewModel>();
+                        .AddTransient<MainViewModel>();
 
                     // Helpers etc.
                     services
-                     .AddSingleton<AppState>()
-                     .AddSingleton<Maintenance>();
+                        .AddTransient<ItemRepository>()
+                        .AddSingleton<AppState>()
+                        .AddSingleton<Maintenance>();
                 }).Build();
         }
 
@@ -69,7 +69,7 @@ namespace GenPhoto
 
             await StartRutine();
 
-            MainWindow = new MainWindow();
+            MainWindow = new NewMainWindow();
             MainWindow.Show();
 
             base.OnStartup(e);

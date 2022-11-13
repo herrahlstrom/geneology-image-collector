@@ -1,22 +1,11 @@
-﻿using GenPhoto.Helpers;
-using System.Text.RegularExpressions;
+﻿using GenPhoto.Models;
 
 namespace GenPhoto.Extensions
 {
     internal static class MetaCollectionExtensions
     {
-        private static Regex YearFromVolumeRegEx = new(@"(?:^|[^\d])(?<year>\d\d\d\d)(?:$|[^\d])");
-
-        public static string GetSortKey(this MetaCollection meta)
+        public static string? GetFilePath(this MetaCollection meta, string currentPath)
         {
-            string year = meta.GetSortYear();
-
-            return $"{year}-{meta.Repository}-{meta.Volume}";
-        }
-
-        public static bool TryGetFilePath(this MetaCollection meta, string currentPath, out string path)
-        {
-            path = "";
             const char DirSeparator = '\\';
             const char FieldSeparator = '-';
 
@@ -29,7 +18,7 @@ namespace GenPhoto.Extensions
             }
             else
             {
-                return false;
+                return null;
             }
 
             if (meta.Location is { Length: > 0 } location)
@@ -44,7 +33,7 @@ namespace GenPhoto.Extensions
             }
             else
             {
-                return false;
+                return null;
             }
 
             if (meta.Year is { Length: > 0 } year)
@@ -73,25 +62,7 @@ namespace GenPhoto.Extensions
 
             result.Append(System.IO.Path.GetExtension(currentPath));
 
-            path = result.ToString();
-
-            return true;
-        }
-
-        private static string GetSortYear(this MetaCollection meta)
-        {
-            if (meta.Year is { Length: 4 } year)
-            {
-                return year;
-            }
-            else if (YearFromVolumeRegEx.Match(meta.Volume ?? "") is { Success: true } yearMatch)
-            {
-                return yearMatch.Groups["year"].Value;
-            }
-            else
-            {
-                return "0000";
-            }
+            return result.ToString();
         }
     }
 }
