@@ -2,9 +2,9 @@
 using System.Collections;
 using System.Diagnostics;
 
-namespace GenPhoto.Helpers;
+namespace GenPhoto.Models;
 
-internal class MetaCollection : IReadOnlyCollection<MetaItem>
+public class MetaCollection : IReadOnlyCollection<MetaItem>
 {
     private List<MetaItem> m_list = new();
 
@@ -38,10 +38,15 @@ internal class MetaCollection : IReadOnlyCollection<MetaItem>
     {
         return this.Where(x => x.Key == k).Select(x => x.Value).FirstOrDefault();
     }
+
+    public bool IsMatch(string w)
+    {
+        return this.Any(x => x.Value.Contains(w, StringComparison.OrdinalIgnoreCase));
+    }
 }
 
 [DebuggerDisplay("{Key} ({DisplayKey}) {Value}")]
-internal class MetaItem
+public class MetaItem
 {
     public string DisplayKey { get; init; } = "";
     public string Key { get; init; } = "";

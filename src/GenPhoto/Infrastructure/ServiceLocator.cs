@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
 
-namespace GenPhoto.Helpers;
+namespace GenPhoto.Infrastructure;
 
 internal class ServiceLocator : IServiceProvider
 {
