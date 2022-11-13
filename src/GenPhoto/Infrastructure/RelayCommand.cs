@@ -53,10 +53,8 @@ public class RelayCommand<T> : IRelayCommand
         }
 
         _executionCounter++;
-        if (SingleExecution)
-        {
-            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-        }
+
+        CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void Revaluate() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);

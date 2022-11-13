@@ -18,6 +18,10 @@
         <StackPanel Grid.Column="0" Grid.Row="0">
 
             <TextBlock Text="{Binding Path}" FontStyle="Italic" TextWrapping="Wrap" />
+            <Button Command="{Binding RenameImageCommand}" Style="{StaticResource HideIfDisabled}" HorizontalAlignment="Left" Margin="0,3,0,5" Padding="5,3" Background="Transparent" BorderThickness="0" Foreground="SteelBlue">
+                <TextBlock Text="{Binding SuggestedPath}" />
+            </Button>
+             
 
             <TextBlock Text="{Binding Notes}" TextWrapping="Wrap" />
 

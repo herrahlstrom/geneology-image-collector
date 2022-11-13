@@ -45,7 +45,7 @@ internal class DisplayViewModelRepository
                                  p.Name
                              }).ToListAsync();
 
-        return new ImageDisplayViewModel()
+        return new ImageDisplayViewModel(this)
         {
             Id = entity.Id,
             Name = entity.Title,
@@ -111,7 +111,28 @@ internal class DisplayViewModelRepository
             yield return ids[Random.Shared.Next(0, ids.Count)];
         }
     }
+    public async Task RenameImageFile(Guid id, string newPath)
+    {
+        using var db = await dbFactory.CreateDbContextAsync();
 
+        var entity = await db.Images.FirstAsync(x => x.Id == id);
+
+        var oldFullPath = Path.Combine(settings.RootPath, entity.Path);
+
+        entity.Path = newPath;
+        
+        var newFullPath = Path.Combine(settings.RootPath, entity.Path);
+        
+        DirectoryInfo newDirectoryInfo = new FileInfo(newFullPath).Directory!;
+        if (!newDirectoryInfo.Exists)
+        {
+            newDirectoryInfo.Create();
+        }
+
+        File.Move(oldFullPath, newFullPath);
+
+        await db.SaveChangesAsync();
+    }
     private static async Task<MetaCollection> GetImageMeta(AppDbContext db, Guid id)
     {
         List<MetaItem> meta = new();
