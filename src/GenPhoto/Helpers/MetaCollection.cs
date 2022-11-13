@@ -1,5 +1,6 @@
 ﻿using GenPhoto.Shared;
 using System.Collections;
+using System.Diagnostics;
 
 namespace GenPhoto.Helpers;
 
@@ -15,9 +16,13 @@ internal class MetaCollection : IReadOnlyCollection<MetaItem>
     public static MetaCollection Empty { get; } = new MetaCollection(Enumerable.Empty<MetaItem>());
     public int Count => m_list.Count;
 
-    public string? Repository => this.Where(x => x.Key == ImageMetaKeys.Repository).Select(x => x.Value).FirstOrDefault();
-    public string? Volume => this.Where(x => x.Key == ImageMetaKeys.Volume).Select(x => x.Value).FirstOrDefault();
-    public string? Year => this.Where(x => x.Key == ImageMetaKeys.Year).Select(x => x.Value).FirstOrDefault();
+    public string? Image => GetValue(ImageMetaKeys.Image);
+    public string? Location => GetValue(ImageMetaKeys.Location);
+    public string? Page => GetValue(ImageMetaKeys.Page);
+    public string? Reference => GetValue(ImageMetaKeys.Reference);
+    public string? Repository => GetValue(ImageMetaKeys.Repository);
+    public string? Volume => GetValue(ImageMetaKeys.Volume);
+    public string? Year => GetValue(ImageMetaKeys.Year);
 
     public IEnumerator<MetaItem> GetEnumerator()
     {
@@ -28,11 +33,17 @@ internal class MetaCollection : IReadOnlyCollection<MetaItem>
     {
         return m_list.GetEnumerator();
     }
+
+    public string? GetValue(string k)
+    {
+        return this.Where(x => x.Key == k).Select(x => x.Value).FirstOrDefault();
+    }
 }
 
-class MetaItem
+[DebuggerDisplay("{Key} ({DisplayKey}) {Value}")]
+internal class MetaItem
 {
+    public string DisplayKey { get; init; } = "";
     public string Key { get; init; } = "";
-    public string DisplayKey { get; init; }= "";
-    public string Value { get; init; }= "";
+    public string Value { get; init; } = "";
 }
