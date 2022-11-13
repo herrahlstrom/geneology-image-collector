@@ -21,7 +21,6 @@ namespace GenPhoto.ViewModels
         private ConcurrentQueue<ImageViewModel> _loadImageQueue = new();
         private string m_searchFilter = "";
         private string[] m_searchFilterArray = Array.Empty<string>();
-        private int _filterCount = 0;
 
         public MainViewModel(ItemRepository itemRepo)
         {
@@ -37,8 +36,7 @@ namespace GenPhoto.ViewModels
                 Filter = (obj) => obj is ImageViewModel item &&
                     m_searchFilterArray.Length > 0 &&
                     m_searchFilterArray.All(item.IsMatch) &&
-                    _filterOptions.All(filterOption => FilterByOptions(item, filterOption)) &&
-                    --_filterCount > 0
+                    _filterOptions.All(filterOption => FilterByOptions(item, filterOption))
             };
 
             FilterOptions = new ListCollectionView(_filterOptions)
@@ -99,8 +97,6 @@ namespace GenPhoto.ViewModels
 
         private void Filter(bool rebuildOptions)
         {
-            _filterCount = 50;
-
             Items.Dispatcher.Invoke(Items.Refresh);
 
             var filteredItems = Items.OfType<ImageViewModel>().ToList();
