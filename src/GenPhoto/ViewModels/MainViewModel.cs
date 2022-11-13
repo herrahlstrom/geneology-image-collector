@@ -21,6 +21,7 @@ namespace GenPhoto.ViewModels
         private ConcurrentQueue<ImageViewModel> _loadImageQueue = new();
         private string m_searchFilter = "";
         private string[] m_searchFilterArray = Array.Empty<string>();
+        static object _loadImageQueueLock = new object();
 
         public MainViewModel(ItemRepository itemRepo)
         {
@@ -133,17 +134,20 @@ namespace GenPhoto.ViewModels
         {
             while (_loadImageQueue.TryDequeue(out var item))
             {
-                if (item.MiniImage != null)
+                lock (_loadImageQueueLock)
                 {
-                    continue;
-                }
+                    if (item.MiniImage != null)
+                    {
+                        continue;
+                    }
 
-                try
-                {
-                    var uri = ImageHelper.GetImageDisplayPath(item.Id, item.FullPath, new(200, 200));
-                    Items.Dispatcher.Invoke(() => item.MiniImage = new BitmapImage(uri));
+                    try
+                    {
+                        var uri = ImageHelper.GetImageDisplayPath(item.Id, item.FullPath, new(200, 200));
+                        Items.Dispatcher.Invoke(() => item.MiniImage = new BitmapImage(uri));
+                    }
+                    catch (ExternalException) { }
                 }
-                catch (ExternalException) { }
             }
         }
 
