@@ -1,6 +1,6 @@
 ﻿namespace GenPhoto
 {
-    internal class AppState
+    public class AppState
     {
         public event EventHandler<Guid>? OpenImageRequest;
 

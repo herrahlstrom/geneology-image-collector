@@ -2,7 +2,7 @@
 
 namespace GenPhoto.Models;
 
-internal class AppSettings
+public class AppSettings
 {
     private readonly IConfiguration _config;
 

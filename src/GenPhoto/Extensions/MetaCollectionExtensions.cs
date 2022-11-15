@@ -29,7 +29,7 @@ namespace GenPhoto.Extensions
 
             if (meta.Volume is { Length: > 0 } volume)
             {
-                result.Append(volume.Replace(":", ""));
+                result.Append(volume.Replace(":", " "));
             }
             else
             {

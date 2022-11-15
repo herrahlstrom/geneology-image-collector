@@ -23,7 +23,12 @@
             <Image Source="{Binding MiniImage}" RenderOptions.BitmapScalingMode="HighQuality" MaxHeight="200" />
         </Button>
 
-        <TextBlock Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Title}" FontWeight="DemiBold" Margin="10,0,0,5" FontSize="14" />
+        <StackPanel Grid.Column="1" Grid.ColumnSpan="2" Margin="10,0,0,5">
+            <TextBlock Text="{Binding Title}" FontWeight="DemiBold" FontSize="14" />
+            <Button Command="{Binding RenameImageCommand}" Style="{StaticResource HideIfDisabled}" HorizontalAlignment="Left" Margin="0,3,0,5" Padding="5,3" Background="Transparent" BorderThickness="0" Foreground="SteelBlue">
+                <TextBlock Text="{Binding SuggestedPath}" />
+            </Button>
+        </StackPanel>
 
         <ItemsControl Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Meta}" Grid.IsSharedSizeScope="True">
             <ItemsControl.ItemsPanel>

@@ -7,7 +7,7 @@ using System.IO;
 
 namespace GenPhoto.Repositories
 {
-    internal class ItemRepository
+    public class ItemRepository
     {
         public ItemRepository(AppState appState, IDbContextFactory<AppDbContext> dbFactory, AppSettings settings)
         {
@@ -54,7 +54,7 @@ namespace GenPhoto.Repositories
                 .GroupBy(x => x.ImageId)
                 .ToDictionary(
                     x => x.Key,
-                    x => x.OrderBy(x=> x.Sort).Select(x => new MetaItem
+                    x => x.OrderBy(x => x.Sort).Select(x => new MetaItem
                     {
                         Key = x.Key,
                         Value = x.Value,
@@ -84,12 +84,11 @@ namespace GenPhoto.Repositories
                     : MetaCollection.Empty;
                 string? suggestedPath = meta.GetFilePath(image.Path);
 
-                result.Add(new ImageViewModel()
+                result.Add(new ImageViewModel(this, Settings)
                 {
                     Id = image.Id,
                     Title = image.Title,
                     Path = image.Path,
-                    FullPath = Path.Combine(Settings.RootPath, image.Path),
                     Persons = personInImagesDict.TryGetValue(image.Id, out var persons) ? persons : Array.Empty<ImagePersonItem>(),
                     Meta = meta,
                     SuggestedPath = suggestedPath,
@@ -101,27 +100,33 @@ namespace GenPhoto.Repositories
             return result;
         }
 
-        public async Task RenameImageFile(Guid id, string newPath)
+        public async Task MoveImageFileToSuggested(ImageViewModel model)
         {
-            using var db = await DbFactory.CreateDbContextAsync();
-
-            var entity = await db.Images.FirstAsync(x => x.Id == id);
-
-            var oldFullPath = Path.Combine(Settings.RootPath, entity.Path);
-
-            entity.Path = newPath;
-
-            var newFullPath = Path.Combine(Settings.RootPath, entity.Path);
-
-            DirectoryInfo newDirectoryInfo = new FileInfo(newFullPath).Directory!;
-            if (!newDirectoryInfo.Exists)
+            if (model.SuggestedPath is { Length: > 0 } suggestedPath)
             {
-                newDirectoryInfo.Create();
+                using var db = await DbFactory.CreateDbContextAsync();
+
+                var entity = await db.Images.FirstAsync(x => x.Id == model.Id);
+
+                var oldFullPath = Path.Combine(Settings.RootPath, entity.Path);
+
+                entity.Path = suggestedPath;
+
+                var newFullPath = Path.Combine(Settings.RootPath, entity.Path);
+
+                DirectoryInfo newDirectoryInfo = new FileInfo(newFullPath).Directory!;
+                if (!newDirectoryInfo.Exists)
+                {
+                    newDirectoryInfo.Create();
+                }
+
+                File.Move(oldFullPath, newFullPath);
+
+                await db.SaveChangesAsync();
+
+                model.Path = suggestedPath;
+                model.SuggestedPath = null;
             }
-
-            File.Move(oldFullPath, newFullPath);
-
-            await db.SaveChangesAsync();
         }
     }
 }
