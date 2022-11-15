@@ -46,21 +46,34 @@
 
         <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="DarkGray" Margin="0,5,0,0" >
             <ScrollViewer>
-            <ItemsControl ItemsSource="{Binding Items}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border BorderBrush="#666" BorderThickness="0,0,0,1" Margin="0,0,0,5">
+                <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.Resources>
+                        <DataTemplate x:Key="ImageDataTemple">
                             <local:ImageControl DataContext="{Binding}" />
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+                        </DataTemplate>
+                        <DataTemplate x:Key="ExpandedImageDataTemple">
+                            <local:ExpandedImageControl DataContext="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.Resources>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="#666" BorderThickness="0,0,0,1" Margin="0,0,0,5">
+                                <ContentControl x:Name="cc" Content="{Binding}" ContentTemplate="{DynamicResource ImageDataTemple}"/>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding EditMode}" Value="True">
+                                    <Setter TargetName="cc" Property="ContentTemplate" Value="{DynamicResource ExpandedImageDataTemple}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
         </Border>
     </Grid>
 </Window>
