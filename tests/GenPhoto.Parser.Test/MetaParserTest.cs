@@ -1,6 +1,3 @@
-using FluentAssertions;
-using GenPhoto.Shared;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 
 namespace GenPhoto.Parser.Test;
