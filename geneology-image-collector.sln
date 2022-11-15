@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenPhoto.Shared", "src\GenP
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenPhoto.Parser.Test", "tests\GenPhoto.Parser.Test\GenPhoto.Parser.Test.csproj", "{36AE51B3-FCE4-4C3A-93A0-6725A6D48B0E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenPhoto.Data.Test", "tests\GenPhoto.Data.Test\GenPhoto.Data.Test.csproj", "{0C6523A5-3CCD-4351-B30E-ACAEEB13C566}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{36AE51B3-FCE4-4C3A-93A0-6725A6D48B0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36AE51B3-FCE4-4C3A-93A0-6725A6D48B0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36AE51B3-FCE4-4C3A-93A0-6725A6D48B0E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C6523A5-3CCD-4351-B30E-ACAEEB13C566}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C6523A5-3CCD-4351-B30E-ACAEEB13C566}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C6523A5-3CCD-4351-B30E-ACAEEB13C566}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C6523A5-3CCD-4351-B30E-ACAEEB13C566}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -53,6 +59,7 @@ Global
 		{8A36B145-C4EC-42A6-A921-00BED4E7064C} = {9E5613A0-31FF-4438-9DC0-779D1EDE5D1F}
 		{26D768AF-06A9-4401-91A5-423D48BCA08E} = {9E5613A0-31FF-4438-9DC0-779D1EDE5D1F}
 		{36AE51B3-FCE4-4C3A-93A0-6725A6D48B0E} = {1768B8B1-3B7D-448C-B7FB-2E691F599D88}
+		{0C6523A5-3CCD-4351-B30E-ACAEEB13C566} = {1768B8B1-3B7D-448C-B7FB-2E691F599D88}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B88AA28D-3250-4F78-8E9E-D48486152F7D}
