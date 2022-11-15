@@ -11,11 +11,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9E5613A0-31F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenPhoto.Data", "src\GenPhoto.Data\GenPhoto.Data.csproj", "{6F08317A-F821-4240-8110-55E3E4878878}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenPhoto.Parser", "src\GenPhoto.Parser\GenPhoto.Parser.csproj", "{8A36B145-C4EC-42A6-A921-00BED4E7064C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenPhoto.Parser", "src\GenPhoto.Parser\GenPhoto.Parser.csproj", "{8A36B145-C4EC-42A6-A921-00BED4E7064C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenPhoto.Shared", "src\GenPhoto.Shared\GenPhoto.Shared.csproj", "{26D768AF-06A9-4401-91A5-423D48BCA08E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenPhoto.Shared", "src\GenPhoto.Shared\GenPhoto.Shared.csproj", "{26D768AF-06A9-4401-91A5-423D48BCA08E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenPhoto.Parser.Test", "tests\GenPhoto.Parser.Test\GenPhoto.Parser.Test.csproj", "{36AE51B3-FCE4-4C3A-93A0-6725A6D48B0E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenPhoto.Parser.Test", "tests\GenPhoto.Parser.Test\GenPhoto.Parser.Test.csproj", "{36AE51B3-FCE4-4C3A-93A0-6725A6D48B0E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenPhoto.Data.Test", "tests\GenPhoto.Data.Test\GenPhoto.Data.Test.csproj", "{0C6523A5-3CCD-4351-B30E-ACAEEB13C566}"
 EndProject
