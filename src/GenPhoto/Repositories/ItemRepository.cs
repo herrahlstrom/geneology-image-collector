@@ -73,7 +73,7 @@ namespace GenPhoto.Repositories
                 .GroupBy(x => x.ImageId)
                 .ToDictionary(
                     x => x.Key,
-                    x => x.Select(x => new ImagePersonItem { Id = x.PersonId, Name = x.Name }).ToList());
+                    x => x.Select(x => new ImagePersonViewModel { Id = x.PersonId, Name = x.Name }).ToList());
 
             var result = new List<ImageViewModel>(images.Count);
 
@@ -89,7 +89,7 @@ namespace GenPhoto.Repositories
                     Id = image.Id,
                     Title = image.Title,
                     Path = image.Path,
-                    Persons = personInImagesDict.TryGetValue(image.Id, out var persons) ? persons : Array.Empty<ImagePersonItem>(),
+                    Persons = personInImagesDict.TryGetValue(image.Id, out var persons) ? persons : Array.Empty<ImagePersonViewModel>(),
                     Meta = meta,
                     SuggestedPath = suggestedPath,
                     MiniImage = null,
@@ -127,6 +127,16 @@ namespace GenPhoto.Repositories
                 model.Path = suggestedPath;
                 model.SuggestedPath = null;
             }
+        }
+
+        public async Task RemovePersonFromImage(Guid imageId, Guid personId)
+        {
+            using var db = await DbFactory.CreateDbContextAsync();
+
+            var entity = db.PersonImages.Where(x => x.ImageId == imageId && x.PersonId == personId).First();
+            db.PersonImages.Remove(entity);
+
+            await db.SaveChangesAsync();
         }
     }
 }

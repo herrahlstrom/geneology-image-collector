@@ -1,10 +1,18 @@
 ﻿namespace GenPhoto.ViewModels
 {
-    public class ImagePersonItem
+    public class ImagePersonViewModel : ViewModelBase
     {
-        public required Guid Id { get; init; }
+        private bool deleted;
 
-        public required string Name { get; init; }
+        public bool Deleted
+        {
+            get => deleted;
+            set => SetProperty(ref deleted, value);
+        }
+
+        public Guid Id { get; init; }
+
+        public string Name { get; init; }
 
         public bool IsMatch(string w)
         {

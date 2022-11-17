@@ -35,6 +35,10 @@ namespace GenPhoto.ViewModels
             EditCommand = new RelayCommand(execute: async () => await BeginEdit());
             UndoCommand = new RelayCommand(execute: async () => await UndoChanges());
             SaveCommand = new RelayCommand(execute: async () => await SaveChanges());
+
+            RemovePersonCommand = new RelayCommand<ImagePersonViewModel>(
+                canExecute: (ImagePersonViewModel? p) => p?.Deleted == false,
+                execute: (ImagePersonViewModel? p) => { p!.Deleted = true; });
         }
 
         public IRelayCommand EditCommand { get; }
@@ -71,7 +75,8 @@ namespace GenPhoto.ViewModels
             set => SetProperty(ref _path, value);
         }
 
-        public required ICollection<ImagePersonItem> Persons { get; init; }
+        public IRelayCommand RemovePersonCommand { get; }
+        public required IList<ImagePersonViewModel> Persons { get; init; }
 
         public IRelayCommand RenameImageCommand { get; }
 
@@ -107,6 +112,22 @@ namespace GenPhoto.ViewModels
         public async Task SaveChanges()
         {
             EditMode = false;
+
+            // ToDo: Update meta fields
+
+            // Remove deleted persons
+            for(int i=Persons.Count -1; i>=0; i--)
+            {
+                if (Persons[i].Deleted)
+                {
+                    await _repo.RemovePersonFromImage(Id, Persons[i].Id);
+                    Persons.RemoveAt(i);
+                }
+            }
+
+            // ToDo: Add new persons
+
+            OnPropertyChanged(nameof(Persons));
 
             await Task.Delay(1);
         }
