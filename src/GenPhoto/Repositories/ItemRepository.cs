@@ -45,13 +45,6 @@ namespace GenPhoto.Repositories
                     entity.Modified = DateTime.UtcNow;
                 });
         }
-        public async Task RemoveMetaOnImage(Guid imageId, string metaKey)
-        {
-            using var repo = m_entityRepository.Create<ImageMeta>();
-
-            await repo.RemoveEntityAsync(ImageMeta.GetKey(imageId, metaKey));
-        }
-
         public async Task AddPersonToImage(Guid imageId, Guid personId)
         {
             using var repo = m_entityRepository.Create<PersonImage>();
@@ -62,6 +55,7 @@ namespace GenPhoto.Repositories
                 PersonId = personId
             });
         }
+
         public async Task<ICollection<ImageViewModel>> GetItemsAsync()
         {
             using var db = await DbFactory.CreateDbContextAsync();
@@ -124,12 +118,12 @@ namespace GenPhoto.Repositories
                     MidiImage = null,
                 };
 
-                if(personInImagesDict.TryGetValue(image.Id, out var persons))
+                if (personInImagesDict.TryGetValue(image.Id, out var persons))
                 {
                     model.AddPersons(persons);
                 }
 
-                if(metaOnImagesDict.TryGetValue(image.Id, out var metaItems))
+                if (metaOnImagesDict.TryGetValue(image.Id, out var metaItems))
                 {
                     model.AddMeta(metaItems);
                     model.SuggestedPath = metaItems.GetFilePath(image.Path);
@@ -170,6 +164,12 @@ namespace GenPhoto.Repositories
             }
         }
 
+        public async Task RemoveMetaOnImage(Guid imageId, string metaKey)
+        {
+            using var repo = m_entityRepository.Create<ImageMeta>();
+
+            await repo.RemoveEntityAsync(ImageMeta.GetKey(imageId, metaKey));
+        }
         public async Task RemovePersonFromImage(Guid imageId, Guid personId)
         {
             using var repo = m_entityRepository.Create<PersonImage>();

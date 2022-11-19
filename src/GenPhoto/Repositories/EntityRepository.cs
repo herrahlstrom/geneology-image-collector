@@ -28,7 +28,7 @@ namespace GenPhoto.Repositories
             else
             {
                 entity = addAction();
-                if(entity != null)
+                if (entity != null)
                 {
                     m_dbSet.Add(entity);
                 }
@@ -46,16 +46,6 @@ namespace GenPhoto.Repositories
             return await m_dbSet.FindAsync(keyValues);
         }
 
-        public async Task<bool> UpdateEntityAsync(Action<TEntity> updateAction, params object[] keyValues)
-        {
-            if (await m_dbSet.FindAsync(keyValues) is { } entity)
-            {
-                updateAction.Invoke(entity);
-            }
-            return await m_db.SaveChangesAsync() > 0;
-        }
-        
-
         public async Task<bool> RemoveEntityAsync(params object[] keyValues)
         {
             if (await m_dbSet.FindAsync(keyValues) is { } entity)
@@ -65,6 +55,15 @@ namespace GenPhoto.Repositories
             }
 
             return false;
+        }
+
+        public async Task<bool> UpdateEntityAsync(Action<TEntity> updateAction, params object[] keyValues)
+        {
+            if (await m_dbSet.FindAsync(keyValues) is { } entity)
+            {
+                updateAction.Invoke(entity);
+            }
+            return await m_db.SaveChangesAsync() > 0;
         }
     }
 
