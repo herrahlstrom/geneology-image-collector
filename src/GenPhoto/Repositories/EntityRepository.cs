@@ -41,6 +41,11 @@ namespace GenPhoto.Repositories
             m_db.Dispose();
         }
 
+        public async Task<IList<TEntity>> GetEntitiesAsync()
+        {
+            return await m_dbSet.ToListAsync();
+        }
+
         public async Task<TEntity?> GetEntityAsync(params object[] keyValues)
         {
             return await m_dbSet.FindAsync(keyValues);

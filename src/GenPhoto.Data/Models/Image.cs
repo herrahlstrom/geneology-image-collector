@@ -10,6 +10,4 @@ public class Image
     public string Title { get; set; } = "";
     public Guid TypeId { get; set; }
     public DateTime Modified { get; set; }
-
-    public ICollection<ImageMeta> Meta { get; set; }
 }
