@@ -54,21 +54,39 @@ namespace GenPhoto.Repositories
 
         public async Task<ICollection<ImageViewModel>> GetItemsAsync()
         {
-            IList<Image> images = await GetAllEntities<Image>();
-            var personImages = await GetAllEntities<PersonImage>();
-            var persons = await GetAllEntities<Person>();
-            Dictionary<Guid, List<ImageMeta>> meta = (await GetAllEntities<ImageMeta>()).GroupBy(x => x.ImageId).ToDictionary(x => x.Key, x => x.ToList());
-            Dictionary<string, ImageMetaKey> metaKeys = (await GetAllEntities<ImageMetaKey>()).ToDictionary(x => x.Key, x => x);
+            IList<Image> images = await GetEntities<Image>();
 
             var personsInImages = (
-                from pi in personImages
-                join p in persons on pi.PersonId equals p.Id
+                from pi in await GetEntities<PersonImage>()
+                join p in await GetEntities<Person>() on pi.PersonId equals p.Id
                 select new
                 {
                     pi.ImageId,
                     PersonId = p.Id,
                     PersonName = p.Name
-                }).GroupBy(x => x.ImageId).ToDictionary(x => x.Key, x => x.Select(x => new { x.PersonId, x.PersonName }));
+                }).GroupBy(x => x.ImageId).ToDictionary(
+                    x => x.Key,
+                    x => x.OrderBy(y => y.PersonName).Select(y => new ImagePersonViewModel
+                    {
+                        Id = y.PersonId,
+                        Name = y.PersonName
+                    }).ToList());
+
+
+            var metaValues = (
+                from meta in await GetEntities<ImageMeta>()
+                join metaKey in await GetEntities<ImageMetaKey>() on meta.Key equals metaKey.Key into metaKeyJoin
+                from metaKey in metaKeyJoin.DefaultIfEmpty()
+                select new
+                {
+                    meta.ImageId,
+                    meta.Key,
+                    meta.Value,
+                    DisplayKeyText = metaKey?.DisplayText ?? meta.Key,
+                    Sort = metaKey?.Sort ?? 999
+                }).GroupBy(x => x.ImageId).ToDictionary(
+                    x => x.Key,
+                    x => x.OrderBy(y => y.Sort).Select(y => new MetaItemViewModel(y.Key, y.Value) { DisplayKey = y.DisplayKeyText }).ToList());
 
             var result = new List<ImageViewModel>(images.Count);
 
@@ -86,23 +104,12 @@ namespace GenPhoto.Repositories
 
                 if (personsInImages.TryGetValue(image.Id, out var personsInImage))
                 {
-                    model.AddPersons(from person in personsInImage
-                                     select new ImagePersonViewModel()
-                                     {
-                                         Id = person.PersonId,
-                                         Name = person.PersonName
-                                     });
+                    model.AddPersons(personsInImage);
                 }
 
-                if (meta.TryGetValue(image.Id, out var metaEntities))
+                if (metaValues.TryGetValue(image.Id, out var metaEntities))
                 {
-                    model.AddMeta(from entity in metaEntities
-                                  let tmp = metaKeys[entity.Key]
-                                  orderby tmp?.Sort ?? 999
-                                  select new MetaItemViewModel(entity.Key, entity.Value)
-                                  {
-                                      DisplayKey = tmp?.DisplayText ?? entity.Key
-                                  });
+                    model.AddMeta(metaEntities);
                 }
 
                 result.Add(model);
@@ -110,7 +117,7 @@ namespace GenPhoto.Repositories
 
             return result;
 
-            async Task<IList<TEntity>> GetAllEntities<TEntity>() where TEntity : class
+            async Task<IList<TEntity>> GetEntities<TEntity>() where TEntity : class
             {
                 using var imageRepo = m_entityRepository.Create<TEntity>();
                 return await imageRepo.GetEntitiesAsync();
