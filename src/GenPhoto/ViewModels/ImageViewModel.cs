@@ -107,6 +107,8 @@ namespace GenPhoto.ViewModels
         {
             _meta.AddRange(meta);
             Meta.Refresh();
+
+            SuggestedPath = _meta.GetFilePath(Path);
         }
 
         public void AddPersons(IEnumerable<ImagePersonViewModel> persons)

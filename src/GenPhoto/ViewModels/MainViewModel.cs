@@ -177,7 +177,7 @@ namespace GenPhoto.ViewModels
                 Name = "Arkiv",
                 Options = filteredItems
                     .SelectMany(x => x.Meta.OfType<MetaItemViewModel>())
-                    .Where(x => x.Key == ImageMetaKeys.Repository)
+                    .Where(x => x.Key == nameof(ImageMetaKey.Repository))
                     .Select(x => x.Value)
                     .Append("")
                     .Distinct()
@@ -194,7 +194,7 @@ namespace GenPhoto.ViewModels
                 Name = "Volym",
                 Options = filteredItems
                     .SelectMany(x => x.Meta.OfType<MetaItemViewModel>())
-                    .Where(x => x.Key == ImageMetaKeys.Volume)
+                    .Where(x => x.Key == nameof(ImageMetaKey.Volume))
                     .Select(x => x.Value)
                     .Append("")
                     .Distinct()
