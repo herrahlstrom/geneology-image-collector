@@ -1,18 +1,16 @@
-﻿namespace GenPhoto.ViewModels
+﻿using GenPhoto.Infrastructure;
+
+namespace GenPhoto.ViewModels
 {
     public class ImagePersonViewModel : ViewModelBase
     {
-        private bool deleted;
+        private EntityState _state;
 
-        public bool Deleted
-        {
-            get => deleted;
-            set => SetProperty(ref deleted, value);
-        }
+        public EntityState State { get => _state; set => SetProperty(ref _state, value); }
 
         public Guid Id { get; init; }
 
-        public string Name { get; init; }
+        public required string Name { get; init; }
 
         public bool IsMatch(string w)
         {

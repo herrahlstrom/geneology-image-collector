@@ -1,5 +1,6 @@
 ﻿using GenPhoto.Helpers;
 using GenPhoto.Infrastructure;
+using GenPhoto.Models;
 using GenPhoto.Repositories;
 using GenPhoto.Shared;
 using System.Collections.Concurrent;
@@ -78,7 +79,7 @@ namespace GenPhoto.ViewModels
             }
             else if (filterOption.Key == "person" && Guid.TryParse(filterOption.SelectedOption, out var personId))
             {
-                if (personId == Guid.Empty || item.Persons.Any(x => x.Id == personId))
+                if (personId == Guid.Empty || item.HasPerson(personId))
                 {
                     return true;
                 }
@@ -86,8 +87,7 @@ namespace GenPhoto.ViewModels
             else if (filterOption.Key.StartsWith("meta."))
             {
                 var key = filterOption.Key[5..];
-                var meta = item.Meta.Where(x => x.Key == key);
-                if (meta.Any(x => x.Value.Equals(filterOption.SelectedOption, StringComparison.OrdinalIgnoreCase)))
+                if (item.HasMetaValue(key, filterOption.SelectedOption))
                 {
                     return true;
                 }
@@ -161,22 +161,22 @@ namespace GenPhoto.ViewModels
                 Key = "person",
                 Name = "Person",
                 Options = filteredItems
-                        .SelectMany(x => x.Persons.Select(y => new { y.Id, y.Name }))
+                        .SelectMany(x => x.Persons.OfType<ImagePersonViewModel>().Select(y => new { y.Id, y.Name }))
                         .Append(new { Id = Guid.Empty, Name = "" })
                         .Distinct()
                         .OrderBy(x => x.Name)
                         .Select(x => new KeyValuePair<string, string>(x.Id.ToString(), x.Name))
                         .ToList(),
-                selectedOptionChangedCallback = () => Filter(false)
+                SelectedOptionChangedCallback = () => Filter(false)
             });
 
             // Filter option | Repository
             _filterOptions.Add(new FilterOption()
             {
-                Key = $"meta.{ImageMetaKeys.Repository}",
+                Key = $"meta.{ImageMetaKey.Repository}",
                 Name = "Arkiv",
                 Options = filteredItems
-                    .SelectMany(x => x.Meta)
+                    .SelectMany(x => x.Meta.OfType<MetaItemViewModel>())
                     .Where(x => x.Key == ImageMetaKeys.Repository)
                     .Select(x => x.Value)
                     .Append("")
@@ -184,16 +184,16 @@ namespace GenPhoto.ViewModels
                     .OrderBy(x => x)
                     .Select(x => new KeyValuePair<string, string>(x, x))
                     .ToList(),
-                selectedOptionChangedCallback = () => Filter(false)
+                SelectedOptionChangedCallback = () => Filter(false)
             });
 
             // Filter option | Volume
             _filterOptions.Add(new FilterOption()
             {
-                Key = $"meta.{ImageMetaKeys.Volume}",
+                Key = $"meta.{ImageMetaKey.Volume}",
                 Name = "Volym",
                 Options = filteredItems
-                    .SelectMany(x => x.Meta)
+                    .SelectMany(x => x.Meta.OfType<MetaItemViewModel>())
                     .Where(x => x.Key == ImageMetaKeys.Volume)
                     .Select(x => x.Value)
                     .Append("")
@@ -201,7 +201,7 @@ namespace GenPhoto.ViewModels
                     .OrderBy(x => x)
                     .Select(x => new KeyValuePair<string, string>(x, x))
                     .ToList(),
-                selectedOptionChangedCallback = () => Filter(false)
+                SelectedOptionChangedCallback = () => Filter(false)
             });
 
             FilterOptions.Dispatcher.Invoke(FilterOptions.Refresh);

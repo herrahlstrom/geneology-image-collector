@@ -46,6 +46,7 @@ namespace GenPhoto
 
                     // Helpers etc.
                     services
+                        .AddSingleton<EntityRepositoryFactory>()
                         .AddTransient<ItemRepository>()
                         .AddSingleton<AppState>()
                         .AddSingleton<Maintenance>();

@@ -1,4 +1,5 @@
 ﻿using GenPhoto.Data;
+using GenPhoto.Data.Models;
 using GenPhoto.Extensions;
 using GenPhoto.Models;
 using GenPhoto.ViewModels;
@@ -9,10 +10,13 @@ namespace GenPhoto.Repositories
 {
     public class ItemRepository
     {
-        public ItemRepository(AppState appState, IDbContextFactory<AppDbContext> dbFactory, AppSettings settings)
+        private readonly EntityRepositoryFactory m_entityRepository;
+
+        public ItemRepository(AppState appState, IDbContextFactory<AppDbContext> dbFactory, EntityRepositoryFactory entityRepository, AppSettings settings)
         {
             AppState = appState;
             DbFactory = dbFactory;
+            m_entityRepository = entityRepository;
             Settings = settings;
         }
 
@@ -22,6 +26,42 @@ namespace GenPhoto.Repositories
 
         public AppSettings Settings { get; }
 
+        public async Task AddOrUpdateMetaOnImage(Guid imageId, KeyValuePair<string, string> meta)
+        {
+            using var repo = m_entityRepository.Create<ImageMeta>();
+
+            await repo.AddOrUpdateEntityAsync(
+                keyValues: new object[] { imageId, meta.Key },
+                addAction: () => new ImageMeta
+                {
+                    ImageId = imageId,
+                    Key = meta.Key,
+                    Value = meta.Value,
+                    Modified = DateTime.UtcNow
+                },
+                updateAction: (entity) =>
+                {
+                    entity.Value = meta.Value;
+                    entity.Modified = DateTime.UtcNow;
+                });
+        }
+        public async Task RemoveMetaOnImage(Guid imageId, string metaKey)
+        {
+            using var repo = m_entityRepository.Create<ImageMeta>();
+
+            await repo.RemoveEntityAsync(ImageMeta.GetKey(imageId, metaKey));
+        }
+
+        public async Task AddPersonToImage(Guid imageId, Guid personId)
+        {
+            using var repo = m_entityRepository.Create<PersonImage>();
+
+            await repo.AddEntityAsync(new PersonImage()
+            {
+                ImageId = imageId,
+                PersonId = personId
+            });
+        }
         public async Task<ICollection<ImageViewModel>> GetItemsAsync()
         {
             using var db = await DbFactory.CreateDbContextAsync();
@@ -54,12 +94,7 @@ namespace GenPhoto.Repositories
                 .GroupBy(x => x.ImageId)
                 .ToDictionary(
                     x => x.Key,
-                    x => x.OrderBy(x => x.Sort).Select(x => new MetaItem
-                    {
-                        Key = x.Key,
-                        Value = x.Value,
-                        DisplayKey = x.DisplayKey
-                    }).ToList());
+                    x => x.OrderBy(x => x.Sort).Select(x => new MetaItemViewModel(x.Key, x.Value) { DisplayKey = x.DisplayKey }).ToList());
 
             var personInImages = await (from personImage in db.PersonImages
                                         join person in db.Persons on personImage.PersonId equals person.Id
@@ -79,22 +114,28 @@ namespace GenPhoto.Repositories
 
             foreach (var image in images)
             {
-                MetaCollection meta = metaOnImagesDict.TryGetValue(image.Id, out var metaItems)
-                    ? new MetaCollection(metaItems)
-                    : MetaCollection.Empty;
-                string? suggestedPath = meta.GetFilePath(image.Path);
-
-                result.Add(new ImageViewModel(this, Settings)
+                var model = new ImageViewModel(this, Settings)
                 {
                     Id = image.Id,
                     Title = image.Title,
                     Path = image.Path,
-                    Persons = personInImagesDict.TryGetValue(image.Id, out var persons) ? persons : Array.Empty<ImagePersonViewModel>(),
-                    Meta = meta,
-                    SuggestedPath = suggestedPath,
+                    SuggestedPath = null,
                     MiniImage = null,
                     MidiImage = null,
-                });
+                };
+
+                if(personInImagesDict.TryGetValue(image.Id, out var persons))
+                {
+                    model.AddPersons(persons);
+                }
+
+                if(metaOnImagesDict.TryGetValue(image.Id, out var metaItems))
+                {
+                    model.AddMeta(metaItems);
+                    model.SuggestedPath = metaItems.GetFilePath(image.Path);
+                }
+
+                result.Add(model);
             }
 
             return result;
@@ -131,12 +172,9 @@ namespace GenPhoto.Repositories
 
         public async Task RemovePersonFromImage(Guid imageId, Guid personId)
         {
-            using var db = await DbFactory.CreateDbContextAsync();
+            using var repo = m_entityRepository.Create<PersonImage>();
 
-            var entity = db.PersonImages.Where(x => x.ImageId == imageId && x.PersonId == personId).First();
-            db.PersonImages.Remove(entity);
-
-            await db.SaveChangesAsync();
+            await repo.RemoveEntityAsync(imageId, personId);
         }
     }
 }

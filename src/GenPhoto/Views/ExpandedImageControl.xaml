@@ -58,7 +58,7 @@
                                 <TextBlock.Resources>
                                     <Style TargetType="TextBlock">
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Deleted}" Value="True">
+                                            <DataTrigger Binding="{Binding State}" Value="Deleted">
                                                 <Setter Property="TextBlock.TextDecorations" Value="Strikethrough" />
                                                 <Setter Property="Foreground" Value="Tomato" />
                                             </DataTrigger>

@@ -4,6 +4,7 @@ using GenPhoto.Infrastructure;
 using GenPhoto.Models;
 using GenPhoto.Repositories;
 using System.Diagnostics;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -11,6 +12,8 @@ namespace GenPhoto.ViewModels
 {
     public class ImageViewModel : ViewModelBase
     {
+        private readonly List<MetaItemViewModel> _meta = new();
+        private readonly List<ImagePersonViewModel> _persons = new();
         private readonly ItemRepository _repo;
         private readonly AppSettings _settings;
         private bool _editMode;
@@ -23,6 +26,13 @@ namespace GenPhoto.ViewModels
         {
             _repo = repo;
             _settings = settings;
+
+            Persons = new ListCollectionView(_persons);
+
+            Meta = new ListCollectionView(_meta)
+            {
+                Filter = (obj) => obj is MetaItemViewModel { Value.Length: > 0 }
+            };
 
             OpenFileCommand = new RelayCommand(
                 canExecute: () => FullPath.HasValue(),
@@ -37,8 +47,8 @@ namespace GenPhoto.ViewModels
             SaveCommand = new RelayCommand(execute: async () => await SaveChanges());
 
             RemovePersonCommand = new RelayCommand<ImagePersonViewModel>(
-                canExecute: (ImagePersonViewModel? p) => p?.Deleted == false,
-                execute: (ImagePersonViewModel? p) => { p!.Deleted = true; });
+                canExecute: (ImagePersonViewModel? p) => p?.State != EntityState.Deleted,
+                execute: (ImagePersonViewModel? p) => { p!.State = EntityState.Deleted; });
         }
 
         public IRelayCommand EditCommand { get; }
@@ -51,9 +61,9 @@ namespace GenPhoto.ViewModels
 
         public string FullPath => System.IO.Path.Combine(_settings.RootPath, Path);
 
-        public required Guid Id { get; init; }
+        public Guid Id { get; init; }
 
-        public required MetaCollection Meta { get; init; }
+        public ListCollectionView Meta { get; }
 
         public ImageSource? MidiImage
         {
@@ -69,14 +79,15 @@ namespace GenPhoto.ViewModels
 
         public IRelayCommand OpenFileCommand { get; }
 
-        public required string Path
+        public string Path
         {
             get => _path;
             set => SetProperty(ref _path, value);
         }
 
+        public ListCollectionView Persons { get; }
+
         public IRelayCommand RemovePersonCommand { get; }
-        public required IList<ImagePersonViewModel> Persons { get; init; }
 
         public IRelayCommand RenameImageCommand { get; }
 
@@ -92,6 +103,18 @@ namespace GenPhoto.ViewModels
 
         public IRelayCommand UndoCommand { get; }
 
+        public void AddMeta(IEnumerable<MetaItemViewModel> meta)
+        {
+            _meta.AddRange(meta);
+            Meta.Refresh();
+        }
+
+        public void AddPersons(IEnumerable<ImagePersonViewModel> persons)
+        {
+            _persons.AddRange(persons);
+            Persons.Refresh();
+        }
+
         public async Task BeginEdit()
         {
             MidiImage ??= new BitmapImage(ImageHelper.GetImageDisplayPath(Id, FullPath, new(400, 400)));
@@ -101,35 +124,79 @@ namespace GenPhoto.ViewModels
             EditMode = true;
         }
 
+        public bool HasMetaValue(string metaKey, string metaValue)
+        {
+            return _meta.Any(x => x.Key == metaKey && x.Value.Equals(metaValue, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public bool HasPerson(Guid id) => _persons.Any(x => x.Id == id);
+
         public bool IsMatch(string w)
         {
             return Title.Contains(w, StringComparison.CurrentCultureIgnoreCase) ||
                 Path.Contains(w, StringComparison.CurrentCultureIgnoreCase) ||
-                Persons.Any(x => x.IsMatch(w)) ||
-                Meta.IsMatch(w);
+                _persons.Any(x => x.IsMatch(w)) ||
+                _meta.IsMatch(w);
         }
 
         public async Task SaveChanges()
         {
             EditMode = false;
 
-            // ToDo: Update meta fields
-
-            // Remove deleted persons
-            for(int i=Persons.Count -1; i>=0; i--)
+            // Update meta
+            var tmpMetaList = new List<MetaItemViewModel>(_meta);
+            foreach (var item in tmpMetaList)
             {
-                if (Persons[i].Deleted)
+                switch (item.State)
                 {
-                    await _repo.RemovePersonFromImage(Id, Persons[i].Id);
-                    Persons.RemoveAt(i);
+                    case EntityState.Added when string.IsNullOrWhiteSpace(item.Value):
+                    case EntityState.Unmodified:
+                        continue;
+
+                    case EntityState.Deleted:
+                    case EntityState.Modified when string.IsNullOrWhiteSpace(item.Value):
+                        await _repo.RemoveMetaOnImage(Id, item.Key);
+                        item.State = EntityState.Unmodified;
+                        break;
+
+                    case EntityState.Added:
+                    case EntityState.Modified:
+                        await _repo.AddOrUpdateMetaOnImage(Id, item);
+                        item.State = EntityState.Unmodified;
+                        break;
+
+                    default:
+                        throw new NotSupportedException($"Invalid state: {item.State}");
                 }
             }
 
-            // ToDo: Add new persons
+            Meta.Refresh();
 
-            OnPropertyChanged(nameof(Persons));
+            // Update persons
+            var tmpPersonList = new List<ImagePersonViewModel>(_persons);
+            foreach (var p in tmpPersonList)
+            {
+                switch (p.State)
+                {
+                    case EntityState.Added:
+                        await _repo.AddPersonToImage(Id, p.Id);
+                        p.State = EntityState.Unmodified;
+                        break;
 
-            await Task.Delay(1);
+                    case EntityState.Deleted:
+                        await _repo.RemovePersonFromImage(Id, p.Id);
+                        Persons.Remove(p);
+                        break;
+
+                    case EntityState.Unmodified:
+                        continue;
+
+                    default:
+                        throw new NotSupportedException($"Invalid state: {p.State}");
+                }
+            }
+
+            Persons.Refresh();
         }
 
         public async Task UndoChanges()

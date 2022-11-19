@@ -1,17 +1,18 @@
 ﻿using GenPhoto.Models;
+using GenPhoto.Shared;
 
 namespace GenPhoto.Extensions
 {
     internal static class MetaCollectionExtensions
     {
-        public static string? GetFilePath(this MetaCollection meta, string currentPath)
+        public static string? GetFilePath(this IEnumerable<MetaItemViewModel> meta, string currentPath)
         {
             const char DirSeparator = '\\';
             const char FieldSeparator = '-';
 
             StringBuilder result = new();
 
-            if (meta.Repository is { Length: > 0 } repository)
+            if (meta.GetValue(ImageMetaKey.Repository) is { Length: > 0 } repository)
             {
                 result.Append(repository);
                 result.Append(DirSeparator);
@@ -21,13 +22,13 @@ namespace GenPhoto.Extensions
                 return null;
             }
 
-            if (meta.Location is { Length: > 0 } location)
+            if (meta.GetValue(ImageMetaKey.Location) is { Length: > 0 } location)
             {
                 result.Append(location);
                 result.Append(DirSeparator);
             }
 
-            if (meta.Volume is { Length: > 0 } volume)
+            if (meta.GetValue(ImageMetaKey.Volume) is { Length: > 0 } volume)
             {
                 result.Append(volume.Replace(":", " "));
             }
@@ -36,25 +37,25 @@ namespace GenPhoto.Extensions
                 return null;
             }
 
-            if (meta.Year is { Length: > 0 } year)
+            if (meta.GetValue(ImageMetaKey.Year) is { Length: > 0 } year)
             {
                 result.AppendFormat(" {0} ", FieldSeparator);
                 result.AppendFormat("år {0}", year);
             }
 
-            if (meta.Image is { Length: > 0 } image)
+            if (meta.GetValue(ImageMetaKey.Image) is { Length: > 0 } image)
             {
                 result.AppendFormat(" {0} ", FieldSeparator);
                 result.AppendFormat("bild {0}", image);
             }
 
-            if (meta.Page is { Length: > 0 } page)
+            if (meta.GetValue(ImageMetaKey.Page) is { Length: > 0 } page)
             {
                 result.AppendFormat(" {0} ", FieldSeparator);
                 result.AppendFormat("sida {0}", page);
             }
 
-            if (meta.Reference is { Length: > 0 } reference)
+            if (meta.GetValue(ImageMetaKey.Reference) is { Length: > 0 } reference)
             {
                 result.AppendFormat(" {0} ", FieldSeparator);
                 result.Append(reference);
@@ -63,6 +64,23 @@ namespace GenPhoto.Extensions
             result.Append(System.IO.Path.GetExtension(currentPath));
 
             return result.ToString();
+        }
+
+        public static string? GetValue(this IEnumerable<MetaItemViewModel> metaItems, string key)
+        {
+            return metaItems
+                .Where(x => x.Key == key)
+                .Select(x => x.Value).FirstOrDefault();
+        }
+
+        public static string? GetValue(this IEnumerable<MetaItemViewModel> metaItems, ImageMetaKey key)
+        {
+            return GetValue(metaItems, key.ToString());
+        }
+
+        public static bool IsMatch(this IEnumerable<MetaItemViewModel> metaItems, string w)
+        {
+            return metaItems.Any(x => x.Value.Contains(w, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

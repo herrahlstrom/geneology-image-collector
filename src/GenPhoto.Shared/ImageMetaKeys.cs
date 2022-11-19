@@ -1,5 +1,17 @@
 ﻿namespace GenPhoto.Shared;
 
+public enum ImageMetaKey
+{
+    Image,
+    Page,
+    Reference,
+    Repository,
+    Volume,
+    Year,
+    Location
+}
+
+[Obsolete]
 public static class ImageMetaKeys
 {
     public const string Image = nameof(Image);
