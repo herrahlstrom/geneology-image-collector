@@ -40,7 +40,7 @@ namespace GenPhoto.ViewModels
 
             RenameImageCommand = new RelayCommand(
                 canExecute: () => SuggestedPath.HasValue() && SuggestedPath != Path,
-                execute: async () => await repo.MoveImageFileToSuggested(this));
+                execute: async () => await repo.MoveImageFileToSuggestedPath(this));
 
             EditCommand = new RelayCommand(execute: async () => await BeginEdit());
             UndoCommand = new RelayCommand(execute: async () => await UndoChanges());
@@ -99,7 +99,7 @@ namespace GenPhoto.ViewModels
             set => SetProperty(ref _suggestedPath, value);
         }
 
-        public required string Title { get; init; }
+        public string Title { get; init; }
 
         public IRelayCommand UndoCommand { get; }
 
@@ -199,6 +199,15 @@ namespace GenPhoto.ViewModels
             }
 
             Persons.Refresh();
+
+            if (_meta.GetFilePath(Path) is { } suggestedPath && suggestedPath != Path)
+            {
+                SuggestedPath = suggestedPath;
+            }
+            else
+            {
+                SuggestedPath = null;
+            }
         }
 
         public async Task UndoChanges()

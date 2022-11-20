@@ -124,7 +124,7 @@ namespace GenPhoto.Repositories
             }
         }
 
-        public async Task MoveImageFileToSuggested(ImageViewModel model)
+        public async Task MoveImageFileToSuggestedPath(ImageViewModel model)
         {
             if (model.SuggestedPath is not { Length: > 0 } suggestedPath)
             {
@@ -142,15 +142,13 @@ namespace GenPhoto.Repositories
                 {
                     File.Move(fullPathFrom, fullPathTo);
                 }
-                catch (DirectoryNotFoundException ex)
+                catch (DirectoryNotFoundException)
                 {
                     new FileInfo(fullPathTo).Directory!.Create();
                     File.Move(fullPathFrom, fullPathTo);
                 }
                 model.Path = suggestedPath;
                 model.SuggestedPath = null;
-
-                entity.Path = suggestedPath;
             }, model.Id);
         }
 
