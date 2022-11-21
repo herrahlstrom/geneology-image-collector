@@ -75,18 +75,14 @@ namespace GenPhoto.Repositories
 
             var metaValues = (
                 from meta in await GetEntities<ImageMeta>()
-                join metaKey in await GetEntities<ImageMetaKey>() on meta.Key equals metaKey.Key into metaKeyJoin
-                from metaKey in metaKeyJoin.DefaultIfEmpty()
                 select new
                 {
                     meta.ImageId,
                     meta.Key,
-                    meta.Value,
-                    DisplayKeyText = metaKey?.DisplayText ?? meta.Key,
-                    Sort = metaKey?.Sort ?? 999
+                    meta.Value
                 }).GroupBy(x => x.ImageId).ToDictionary(
                     x => x.Key,
-                    x => x.OrderBy(y => y.Sort).Select(y => new MetaItemViewModel(y.Key, y.Value) { DisplayKey = y.DisplayKeyText }).ToList());
+                    x => x.Select(y => new MetaItemViewModel(y.Key, y.Value)).ToList());
 
             var result = new List<ImageViewModel>(images.Count);
 
