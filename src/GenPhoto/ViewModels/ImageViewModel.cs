@@ -3,6 +3,7 @@ using GenPhoto.Helpers;
 using GenPhoto.Infrastructure;
 using GenPhoto.Models;
 using GenPhoto.Repositories;
+using GenPhoto.Shared;
 using System.Diagnostics;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -31,8 +32,9 @@ namespace GenPhoto.ViewModels
 
             Meta = new ListCollectionView(_meta)
             {
-                Filter = (obj) => obj is MetaItemViewModel { Value.Length: > 0 }
+                Filter = (obj) => EditMode || obj is MetaItemViewModel { Value.Length: > 0 },
             };
+            Meta.SortDescriptions.Add(new System.ComponentModel.SortDescription(nameof(MetaItemViewModel.Sort), System.ComponentModel.ListSortDirection.Ascending));
 
             OpenFileCommand = new RelayCommand(
                 canExecute: () => FullPath.HasValue(),
@@ -56,7 +58,11 @@ namespace GenPhoto.ViewModels
         public bool EditMode
         {
             get { return _editMode; }
-            set { SetProperty(ref _editMode, value); }
+            set
+            {
+                SetProperty(ref _editMode, value);
+                Meta.Refresh();
+            }
         }
 
         public string FullPath => System.IO.Path.Combine(_settings.RootPath, Path);
@@ -99,7 +105,7 @@ namespace GenPhoto.ViewModels
             set => SetProperty(ref _suggestedPath, value);
         }
 
-        public string Title { get; init; }
+        public string Title { get; init; } = "";
 
         public IRelayCommand UndoCommand { get; }
 
@@ -123,6 +129,11 @@ namespace GenPhoto.ViewModels
 
             await Task.Delay(1);
 
+            _meta.AddRange(from keyId in Enum.GetValues(typeof(ImageMetaKey)) as IList<int>
+                           let key = Enum.GetName(typeof(ImageMetaKey), keyId)
+                           where _meta.All(meta => meta.Key != key)
+                           select new MetaItemViewModel(key, "", EntityState.Added));
+            
             EditMode = true;
         }
 

@@ -6,7 +6,7 @@
              xmlns:viewModels="clr-namespace:GenPhoto.ViewModels"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=viewModels:ImageViewModel, IsDesignTimeCreatable=False}"
-             d:DesignHeight="200" d:DesignWidth="800">
+             d:DesignHeight="400" d:DesignWidth="800">
     <Grid Margin="0,0,5,5">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
