@@ -83,6 +83,7 @@ namespace GenPhoto
             _ = Task.Run(async () =>
             {
                 await Task.Delay(1);
+                //await fileManagement.OneTimeFix();
                 //await fileManagement.FindNewFilesAsync();
                 //await fileManagement.FindMissingFilesAsync();
             });

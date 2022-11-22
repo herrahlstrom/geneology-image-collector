@@ -148,10 +148,8 @@ namespace GenPhoto.Repositories
                 {
                     File.Move(fullPathFrom, fullPathTo);
                 }
-                catch (FileNotFoundException) when (File.Exists(fullPathTo))
+                catch (FileNotFoundException) when (File.Exists(fullPathTo) && new FileInfo(fullPathTo).Length == entity.Size)
                 {
-                    //ToDo: Kontrollera filens storlek
-                    // Detta kräver att vi börjar spara storleken i databasen
                     File.Delete(fullPathFrom);
                 }
                 catch (DirectoryNotFoundException)

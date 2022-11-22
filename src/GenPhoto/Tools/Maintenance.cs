@@ -17,6 +17,26 @@ namespace GenPhoto.Tools
             _settings = settings;
         }
 
+        public async Task OneTimeFix()
+        {
+            using var db = await _dbFactory.CreateDbContextAsync();
+
+            
+            var miss = await db.Images.Where(x => x.Size == 0).ToListAsync();
+            var paths = miss.Select(x => x.Path).ToList();
+
+            foreach (var entry in miss)
+            {
+                var fullPath = System.IO.Path.Combine(_settings.RootPath, entry.Path);
+                var fi = new FileInfo(fullPath);
+                if (fi.Exists)
+                {
+                    entry.Size = (int)fi.Length;
+                }
+            }
+            await db.SaveChangesAsync();
+        }
+
         public async Task FindMissingFilesAsync()
         {
             using var db = await _dbFactory.CreateDbContextAsync();
@@ -65,6 +85,7 @@ namespace GenPhoto.Tools
                     Path = file,
                     TypeId = defualtImageTypeId,
                     Notes = "",
+                    Size = file.Length,
                 };
                 db.Images.Add(entity);
             }
