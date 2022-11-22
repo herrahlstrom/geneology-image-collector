@@ -4,7 +4,9 @@ using GenPhoto.Infrastructure;
 using GenPhoto.Models;
 using GenPhoto.Repositories;
 using GenPhoto.Shared;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Printing;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -17,11 +19,14 @@ namespace GenPhoto.ViewModels
         private readonly List<ImagePersonViewModel> _persons = new();
         private readonly ItemRepository _repo;
         private readonly AppSettings _settings;
+        private List<KeyValuePair<Guid, string>> _availablePersons = new List<KeyValuePair<Guid, string>>();
         private bool _editMode;
         private ImageSource? _midiImage;
         private ImageSource? _miniImage;
         private string _path = "";
         private string? _suggestedPath;
+        private Guid? selectedAvailablePerson;
+        private string availablePersonsFilter = "";
 
         public ImageViewModel(ItemRepository repo, AppSettings settings)
         {
@@ -34,11 +39,32 @@ namespace GenPhoto.ViewModels
             {
                 Filter = (obj) => EditMode || obj is MetaItemViewModel { Value.Length: > 0 },
             };
-            Meta.SortDescriptions.Add(new System.ComponentModel.SortDescription(nameof(MetaItemViewModel.Sort), System.ComponentModel.ListSortDirection.Ascending));
+            Meta.SortDescriptions.Add(new SortDescription(nameof(MetaItemViewModel.Sort), ListSortDirection.Ascending));
+
+            AvailablePersons = new ListCollectionView(_availablePersons)
+            {
+                Filter = (obj) =>
+                    string.IsNullOrEmpty(AvailablePersonsFilter) ||
+                    obj is KeyValuePair<Guid, string> item && item.Value.Contains(AvailablePersonsFilter, StringComparison.OrdinalIgnoreCase)
+            };
+
+            AvailablePersons.SortDescriptions.Add(new SortDescription("Value", ListSortDirection.Ascending));
 
             OpenFileCommand = new RelayCommand(
                 canExecute: () => FullPath.HasValue(),
                 execute: () => Process.Start(new ProcessStartInfo("explorer", FullPath!)));
+
+            AddPersonCommand = new RelayCommand(
+                canExecute: () => selectedAvailablePerson.HasValue,
+                execute: () =>
+                {
+                    if (selectedAvailablePerson is { } pId)
+                    {
+                        var name = _availablePersons.Where(x => x.Key == pId).Select(x => (string?)x.Value).FirstOrDefault();
+                        _persons.Add(new ImagePersonViewModel() { Id = pId, Name = name ?? "", State = EntityState.Added });
+                        Persons.Refresh();
+                    }
+                });
 
             RenameImageCommand = new RelayCommand(
                 canExecute: () => SuggestedPath.HasValue() && SuggestedPath != Path,
@@ -53,6 +79,25 @@ namespace GenPhoto.ViewModels
                 execute: (ImagePersonViewModel? p) => { p!.State = EntityState.Deleted; });
         }
 
+        public ListCollectionView AvailablePersons { get; }
+        public string AvailablePersonsFilter
+        {
+            get => availablePersonsFilter;
+            set
+            {
+                availablePersonsFilter = value;
+                AvailablePersons.Refresh();
+            }
+        }
+        public Guid? SelectedAvailablePerson
+        {
+            get => selectedAvailablePerson;
+            set
+            {
+                selectedAvailablePerson = value;
+                AddPersonCommand.Revaluate();
+            }
+        }
         public IRelayCommand EditCommand { get; }
 
         public bool EditMode
@@ -66,7 +111,6 @@ namespace GenPhoto.ViewModels
         }
 
         public string FullPath => System.IO.Path.Combine(_settings.RootPath, Path);
-
         public Guid Id { get; init; }
 
         public ListCollectionView Meta { get; }
@@ -92,8 +136,9 @@ namespace GenPhoto.ViewModels
         }
 
         public ListCollectionView Persons { get; }
-
         public IRelayCommand RemovePersonCommand { get; }
+
+        public IRelayCommand AddPersonCommand { get; }
 
         public IRelayCommand RenameImageCommand { get; }
 
@@ -133,7 +178,13 @@ namespace GenPhoto.ViewModels
                            let key = Enum.GetName(typeof(ImageMetaKey), keyId)
                            where _meta.All(meta => meta.Key != key)
                            select new MetaItemViewModel(key, "", EntityState.Added));
-            
+
+            if (_availablePersons.Count == 0)
+            {
+                _availablePersons.AddRange(await _repo.GetAvailablePersons());
+                AvailablePersons.Refresh();
+            }
+
             EditMode = true;
         }
 

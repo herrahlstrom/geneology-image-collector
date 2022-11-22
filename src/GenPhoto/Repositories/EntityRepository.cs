@@ -14,11 +14,6 @@ namespace GenPhoto.Repositories
             m_dbSet = m_db.Set<TEntity>();
         }
 
-        public async Task AddEntityAsync(TEntity entity)
-        {
-            await m_dbSet.AddAsync(entity);
-        }
-
         public async Task<bool> AddOrUpdateEntityAsync(Func<TEntity> addAction, Action<TEntity> updateAction, params object[] keyValues)
         {
             if (await m_dbSet.FindAsync(keyValues) is { } entity)

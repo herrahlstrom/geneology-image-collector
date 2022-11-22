@@ -5,6 +5,7 @@ using GenPhoto.Repositories;
 using GenPhoto.Shared;
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Data;
@@ -147,6 +148,7 @@ namespace GenPhoto.ViewModels
                         Items.Dispatcher.Invoke(() => item.MiniImage = new BitmapImage(uri));
                     }
                     catch (ExternalException) { }
+                    catch (FileNotFoundException) { }
                 }
             }
         }

@@ -62,6 +62,9 @@
                                                 <Setter Property="TextBlock.TextDecorations" Value="Strikethrough" />
                                                 <Setter Property="Foreground" Value="Tomato" />
                                             </DataTrigger>
+                                            <DataTrigger Binding="{Binding State}" Value="Added">
+                                                <Setter Property="Foreground" Value="Green" />
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Resources>
@@ -75,6 +78,18 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+
+            <StackPanel Orientation="Horizontal">
+                <TextBox BorderThickness="1,1,0,1" Text="{Binding AvailablePersonsFilter, UpdateSourceTrigger=PropertyChanged}" MinWidth="40" Padding="5,0" />
+                <ComboBox ItemsSource="{Binding AvailablePersons}" MinWidth="100"
+                          SelectedValue="{Binding SelectedAvailablePerson}"
+                          SelectedValuePath="Key" DisplayMemberPath="Value" />
+                <Button Command="{Binding RelativeSource={RelativeSource Mode=FindAncestor,
+                                                                         AncestorType={x:Type UserControl}},
+                                                                         Path=DataContext.AddPersonCommand}"
+                                    Content="+" Padding="5,2" Background="Transparent" BorderThickness="0" Margin="5,0,0,0" HorizontalAlignment="Center" />
+            </StackPanel>
+            
         </StackPanel>
 
         <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">

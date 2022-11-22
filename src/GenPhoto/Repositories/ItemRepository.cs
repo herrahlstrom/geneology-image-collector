@@ -1,8 +1,6 @@
-﻿using GenPhoto.Data;
-using GenPhoto.Data.Models;
+﻿using GenPhoto.Data.Models;
 using GenPhoto.Models;
 using GenPhoto.ViewModels;
-using Microsoft.EntityFrameworkCore;
 using System.IO;
 
 namespace GenPhoto.Repositories
@@ -41,15 +39,21 @@ namespace GenPhoto.Repositories
                 });
         }
 
-        public async Task AddPersonToImage(Guid imageId, Guid personId)
+        public async Task AddPersonToImage(Guid image, Guid person)
         {
             using var repo = m_entityRepository.Create<PersonImage>();
+            await repo.AddOrUpdateEntityAsync(
+                addAction: () => new PersonImage() { ImageId = image, PersonId = person },
+                updateAction: _ => { },
+                PersonImage.GetKey(image, person));
+        }
 
-            await repo.AddEntityAsync(new PersonImage()
-            {
-                ImageId = imageId,
-                PersonId = personId
-            });
+        public async Task<IList<KeyValuePair<Guid, string>>> GetAvailablePersons()
+        {
+            using var repo = m_entityRepository.Create<Person>();
+            var persons = await repo.GetEntitiesAsync();
+
+            return persons.Select(x => new KeyValuePair<Guid, string>(x.Id, x.Name)).ToList();
         }
 
         public async Task<ICollection<ImageViewModel>> GetItemsAsync()
@@ -71,7 +75,6 @@ namespace GenPhoto.Repositories
                         Id = y.PersonId,
                         Name = y.PersonName
                     }).ToList());
-
 
             var metaValues = (
                 from meta in await GetEntities<ImageMeta>()
@@ -120,6 +123,13 @@ namespace GenPhoto.Repositories
             }
         }
 
+        public async Task<string> GetPersonName(Guid id)
+        {
+            using var repo = m_entityRepository.Create<Person>();
+            var entity = await repo.GetEntityAsync(id);
+            return entity?.Name ?? "";
+        }
+
         public async Task MoveImageFileToSuggestedPath(ImageViewModel model)
         {
             if (model.SuggestedPath is not { Length: > 0 } suggestedPath)
@@ -138,14 +148,23 @@ namespace GenPhoto.Repositories
                 {
                     File.Move(fullPathFrom, fullPathTo);
                 }
+                catch (FileNotFoundException) when (File.Exists(fullPathTo))
+                {
+                    //ToDo: Kontrollera filens storlek
+                    // Detta kräver att vi börjar spara storleken i databasen
+                    File.Delete(fullPathFrom);
+                }
                 catch (DirectoryNotFoundException)
                 {
                     new FileInfo(fullPathTo).Directory!.Create();
                     File.Move(fullPathFrom, fullPathTo);
                 }
-                model.Path = suggestedPath;
-                model.SuggestedPath = null;
+
+                entity.Path = suggestedPath;
             }, model.Id);
+
+            model.Path = suggestedPath;
+            model.SuggestedPath = null;
         }
 
         public async Task RemoveMetaOnImage(Guid imageId, string metaKey)
