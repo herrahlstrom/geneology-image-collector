@@ -1,17 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
 using System.Diagnostics;
-using System.Linq;
 
 namespace GenPhoto.Helpers
 {
     internal class ScopedStopwatchLogger : IDisposable
     {
-        private Stopwatch m_stopwatch;
         readonly ILogger m_logger;
         readonly LogLevel m_logLevel;
-        StringBuilder m_text;
-        List<object> m_parameters;
+        readonly List<object> m_parameters;
+        readonly Stopwatch m_stopwatch;
+        readonly StringBuilder m_text;
 
         public ScopedStopwatchLogger(ILogger logger, LogLevel logLevel, string text, params object[] parameters)
         {

@@ -3,6 +3,7 @@ using GenPhoto.Infrastructure;
 using GenPhoto.Models;
 using GenPhoto.Repositories;
 using GenPhoto.Shared;
+using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.IO;
@@ -16,14 +17,18 @@ namespace GenPhoto.ViewModels
 {
     internal class MainViewModel : ViewModelBase
     {
+        private const int DefaultMaxFilteredItems = 10;
+
+        static readonly object _loadImageQueueLock = new object();
         private readonly List<FilterOption> _filterOptions = new List<FilterOption>();
+        private Timer _inputTimer;
         private readonly Api _itemRepo;
         private readonly List<ImageViewModel> _items = new List<ImageViewModel>();
-        private Timer _inputTimer;
         private ConcurrentQueue<ImageViewModel> _loadImageQueue = new();
+        readonly HashSet<Guid> m_filteredItems = new HashSet<Guid>();
+        private HashSet<Guid> m_hiddenFilteredItems = new HashSet<Guid>();
         private string m_searchFilter = "";
         private string[] m_searchFilterArray = Array.Empty<string>();
-        static object _loadImageQueueLock = new object();
 
         public MainViewModel(Api itemRepo)
         {
@@ -34,13 +39,7 @@ namespace GenPhoto.ViewModels
             };
             _inputTimer.Elapsed += (_, _) => Filter(true);
 
-            Items = new ListCollectionView(_items)
-            {
-                Filter = (obj) => obj is ImageViewModel item &&
-                    m_searchFilterArray.Length > 0 &&
-                    m_searchFilterArray.All(item.IsMatch) &&
-                    _filterOptions.All(filterOption => FilterByOptions(item, filterOption))
-            };
+            Items = new ListCollectionView(_items) { Filter = FilterItem };
 
             FilterOptions = new ListCollectionView(_filterOptions)
             {
@@ -53,23 +52,30 @@ namespace GenPhoto.ViewModels
             PropertyChanged += OnPropertyChanged;
         }
 
-        public ListCollectionView FilterOptions { get; }
-
-        public string FilterText
+        private void Filter(bool rebuildOptions)
         {
-            get => m_searchFilter;
-            set => SetProperty(ref m_searchFilter, value);
-        }
+            Items.Dispatcher.Invoke(Items.Refresh);
 
-        public ListCollectionView Items { get; }
-        public IRelayCommand LoadCommand { get; }
+            var filteredItems = Items.OfType<ImageViewModel>().ToList();
 
-        public string Title => string.IsNullOrWhiteSpace(FilterText) ? "Gen Photo" : "Gen Photo | " + FilterText;
+            if (rebuildOptions)
+            {
+                m_hiddenFilteredItems.Clear();
+                m_maxFilteredItems = DefaultMaxFilteredItems;
+                m_filteredItems.Clear();
 
-        protected async void LoadCommand_Execute()
-        {
-            _items.AddRange(await _itemRepo.GetItemsAsync());
-            Items.Refresh();
+                RebuildFilterOptions(filteredItems);
+            }
+
+            foreach (var item in filteredItems.Where(x => x.MiniImage is null).Take(20))
+            {
+                _loadImageQueue.Enqueue(item);
+            }
+
+            if (!_loadImageQueue.IsEmpty)
+            {
+                new Thread(new ThreadStart(ProcessImageQueue)).Start();
+            }
         }
 
         private static bool FilterByOptions(ImageViewModel item, FilterOption filterOption)
@@ -97,26 +103,36 @@ namespace GenPhoto.ViewModels
             return false;
         }
 
-        private void Filter(bool rebuildOptions)
+        private bool FilterItem(object obj)
         {
-            Items.Dispatcher.Invoke(Items.Refresh);
-
-            var filteredItems = Items.OfType<ImageViewModel>().ToList();
-
-            if (rebuildOptions)
+            if (obj is not ImageViewModel item || m_searchFilterArray.Length == 0)
             {
-                RebuildFilterOptions(filteredItems);
+                return false;
             }
 
-            foreach (var item in filteredItems.Where(x => x.MiniImage is null).Take(20))
+            if (!m_filteredItems.Contains(item.Id) && (m_filteredItems.Count >= m_maxFilteredItems))
             {
-                _loadImageQueue.Enqueue(item);
+                m_hiddenFilteredItems.Add(item.Id);
+                return false;
             }
 
-            if (!_loadImageQueue.IsEmpty)
+            var result1 = m_searchFilterArray.All(item.IsMatch);
+            if (result1)
             {
-                new Thread(new ThreadStart(ProcessImageQueue)).Start();
+                m_filteredItems.Add(item.Id);
             }
+            else
+            {
+                return false;
+            }
+
+            var result2 = _filterOptions.All(filterOption => FilterByOptions(item, filterOption));
+            if (!result2)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -209,5 +225,26 @@ namespace GenPhoto.ViewModels
             FilterOptions.Dispatcher.Invoke(FilterOptions.Refresh);
 
         }
+
+        protected async void LoadCommand_Execute()
+        {
+            _items.AddRange(await _itemRepo.GetItemsAsync());
+            Items.Refresh();
+        }
+
+        public ListCollectionView FilterOptions { get; }
+
+        public string FilterText
+        {
+            get => m_searchFilter;
+            set => SetProperty(ref m_searchFilter, value);
+        }
+
+        public ListCollectionView Items { get; }
+        public IRelayCommand LoadCommand { get; }
+
+        public string Title => string.IsNullOrWhiteSpace(FilterText) ? "Gen Photo" : "Gen Photo | " + FilterText;
+
+        private int m_maxFilteredItems = DefaultMaxFilteredItems;
     }
 }
