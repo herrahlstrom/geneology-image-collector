@@ -181,7 +181,7 @@ namespace GenPhoto.ViewModels
 
             if (_availablePersons.Count == 0)
             {
-                _availablePersons.AddRange(await _api.GetAvailablePersons());
+                _availablePersons.AddRange(await _api.GetAllPersons());
                 AvailablePersons.Refresh();
             }
 

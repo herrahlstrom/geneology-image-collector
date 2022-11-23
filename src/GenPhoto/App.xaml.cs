@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System.IO;
 using System.Windows;
 
@@ -25,11 +26,15 @@ namespace GenPhoto
                 {
                     builder
                         .SetBasePath(Directory.GetCurrentDirectory())
-                        .AddJsonFile($"appsettings.{Environment.MachineName}.json", optional: true);
+                        .AddJsonFile($"appsettings.json", optional: false)
+                        .AddJsonFile($"appsettings.{Environment.MachineName}.json", optional: false);
                 })
                 .ConfigureServices((_, services) =>
                 {
-                    services.AddLogging();
+                    services.AddLogging(builder =>
+                    {
+                        builder.AddDebug();
+                    });
 
                     services.AddMemoryCache();
 

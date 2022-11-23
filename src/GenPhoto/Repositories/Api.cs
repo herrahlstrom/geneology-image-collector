@@ -1,6 +1,9 @@
 ﻿using GenPhoto.Data.Models;
+using GenPhoto.Helpers;
 using GenPhoto.Models;
 using GenPhoto.ViewModels;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using System.IO;
 
 namespace GenPhoto.Repositories
@@ -8,18 +11,17 @@ namespace GenPhoto.Repositories
     public class Api
     {
         private readonly EntityRepositoryFactory m_entityRepository;
-        private readonly IMemoryCache _cache;
+        private readonly ILogger<Api> m_logger;
+        private readonly IMemoryCache m_cache;
+        private readonly AppSettings m_settings;
 
-        public Api(AppState appState, EntityRepositoryFactory entityRepository, AppSettings settings, IMemoryCache cache)
+        public Api(EntityRepositoryFactory entityRepository, AppSettings settings, IMemoryCache cache, ILogger<Api> logger)
         {
-            AppState = appState;
             m_entityRepository = entityRepository;
-            Settings = settings;
-            _cache = cache;
+            m_settings = settings;
+            m_cache = cache;
+            m_logger = logger;
         }
-
-        public AppState AppState { get; }
-        public AppSettings Settings { get; }
 
         public async Task AddOrUpdateMetaOnImage(Guid imageId, KeyValuePair<string, string> meta)
         {
@@ -50,14 +52,17 @@ namespace GenPhoto.Repositories
                 PersonImage.GetKey(image, person));
         }
 
-        public async Task<IList<KeyValuePair<Guid, string>>> GetAvailablePersons()
+        public async Task<IList<KeyValuePair<Guid, string>>> GetAllPersons()
         {
-            IList<Person> persons = await _cache.GetOrCreateAsync<IList<Person>>(CacheKey.AvailablePersons,
+            IList<Person> persons = await m_cache.GetOrCreateAsync(CacheKey.AvailablePersons,
                 async cacheEntry =>
                 {
-                    cacheEntry.AbsoluteExpiration= DateTime.UtcNow + TimeSpan.FromMinutes(10);
+                    using var logger = new ScopedStopwatchLogger(m_logger, LogLevel.Trace, "Load all persons");
+                    cacheEntry.AbsoluteExpiration = DateTime.UtcNow + TimeSpan.FromMinutes(10);
                     using var repo = m_entityRepository.Create<Person>();
-                    return await repo.GetEntitiesAsync();
+                    IList<Person> result = await repo.GetEntitiesAsync();
+                    logger.AppentText("{} persons", result.Count);
+                    return result;
                 });
 
             return persons.Select(x => new KeyValuePair<Guid, string>(x.Id, x.Name)).ToList();
@@ -98,7 +103,7 @@ namespace GenPhoto.Repositories
 
             foreach (var image in images)
             {
-                var model = new ImageViewModel(this, Settings)
+                var model = new ImageViewModel(this, m_settings)
                 {
                     Id = image.Id,
                     Title = image.Title,
@@ -134,7 +139,7 @@ namespace GenPhoto.Repositories
         {
             using var repo = m_entityRepository.Create<Person>();
             var entity = await repo.GetEntityAsync(id);
-            return entity?.Name ?? "";
+            return entity?.Name ?? string.Empty;
         }
 
         public async Task MoveImageFileToSuggestedPath(ImageViewModel model)
@@ -148,8 +153,8 @@ namespace GenPhoto.Repositories
 
             await repo.UpdateEntityAsync((entity) =>
             {
-                string fullPathFrom = Path.Combine(Settings.RootPath, entity.Path);
-                string fullPathTo = Path.Combine(Settings.RootPath, suggestedPath);
+                string fullPathFrom = Path.Combine(m_settings.RootPath, entity.Path);
+                string fullPathTo = Path.Combine(m_settings.RootPath, suggestedPath);
 
                 try
                 {
