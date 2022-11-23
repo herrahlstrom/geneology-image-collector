@@ -31,6 +31,8 @@ namespace GenPhoto
                 {
                     services.AddLogging();
 
+                    services.AddMemoryCache();
+
                     services.AddDbContextFactory<AppDbContext>((services, optionsBuilder) =>
                     {
                         var config = services.GetRequiredService<IConfiguration>();

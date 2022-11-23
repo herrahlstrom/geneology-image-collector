@@ -8,12 +8,14 @@ namespace GenPhoto.Repositories
     public class Api
     {
         private readonly EntityRepositoryFactory m_entityRepository;
+        private readonly IMemoryCache _cache;
 
-        public Api(AppState appState, EntityRepositoryFactory entityRepository, AppSettings settings)
+        public Api(AppState appState, EntityRepositoryFactory entityRepository, AppSettings settings, IMemoryCache cache)
         {
             AppState = appState;
             m_entityRepository = entityRepository;
             Settings = settings;
+            _cache = cache;
         }
 
         public AppState AppState { get; }
@@ -50,8 +52,13 @@ namespace GenPhoto.Repositories
 
         public async Task<IList<KeyValuePair<Guid, string>>> GetAvailablePersons()
         {
-            using var repo = m_entityRepository.Create<Person>();
-            var persons = await repo.GetEntitiesAsync();
+            IList<Person> persons = await _cache.GetOrCreateAsync<IList<Person>>(CacheKey.AvailablePersons,
+                async cacheEntry =>
+                {
+                    cacheEntry.AbsoluteExpiration= DateTime.UtcNow + TimeSpan.FromMinutes(10);
+                    using var repo = m_entityRepository.Create<Person>();
+                    return await repo.GetEntitiesAsync();
+                });
 
             return persons.Select(x => new KeyValuePair<Guid, string>(x.Id, x.Name)).ToList();
         }
@@ -177,6 +184,11 @@ namespace GenPhoto.Repositories
             using var repo = m_entityRepository.Create<PersonImage>();
 
             await repo.RemoveEntityAsync(imageId, personId);
+        }
+
+        private static class CacheKey
+        {
+            public static string AvailablePersons = nameof(AvailablePersons);
         }
     }
 }
