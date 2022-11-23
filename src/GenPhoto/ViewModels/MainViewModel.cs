@@ -17,7 +17,7 @@ namespace GenPhoto.ViewModels
     internal class MainViewModel : ViewModelBase
     {
         private readonly List<FilterOption> _filterOptions = new List<FilterOption>();
-        private readonly ItemRepository _itemRepo;
+        private readonly Api _itemRepo;
         private readonly List<ImageViewModel> _items = new List<ImageViewModel>();
         private Timer _inputTimer;
         private ConcurrentQueue<ImageViewModel> _loadImageQueue = new();
@@ -25,7 +25,7 @@ namespace GenPhoto.ViewModels
         private string[] m_searchFilterArray = Array.Empty<string>();
         static object _loadImageQueueLock = new object();
 
-        public MainViewModel(ItemRepository itemRepo)
+        public MainViewModel(Api itemRepo)
         {
             _inputTimer = new()
             {

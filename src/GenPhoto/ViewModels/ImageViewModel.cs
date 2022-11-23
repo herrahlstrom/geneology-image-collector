@@ -17,7 +17,7 @@ namespace GenPhoto.ViewModels
     {
         private readonly List<MetaItemViewModel> _meta = new();
         private readonly List<ImagePersonViewModel> _persons = new();
-        private readonly ItemRepository _repo;
+        private readonly Api _api;
         private readonly AppSettings _settings;
         private List<KeyValuePair<Guid, string>> _availablePersons = new List<KeyValuePair<Guid, string>>();
         private bool _editMode;
@@ -28,9 +28,9 @@ namespace GenPhoto.ViewModels
         private Guid? selectedAvailablePerson;
         private string availablePersonsFilter = "";
 
-        public ImageViewModel(ItemRepository repo, AppSettings settings)
+        public ImageViewModel(Api api, AppSettings settings)
         {
-            _repo = repo;
+            _api = api;
             _settings = settings;
 
             Persons = new ListCollectionView(_persons);
@@ -68,7 +68,7 @@ namespace GenPhoto.ViewModels
 
             RenameImageCommand = new RelayCommand(
                 canExecute: () => SuggestedPath.HasValue() && SuggestedPath != Path,
-                execute: async () => await repo.MoveImageFileToSuggestedPath(this));
+                execute: async () => await api.MoveImageFileToSuggestedPath(this));
 
             EditCommand = new RelayCommand(execute: async () => await BeginEdit());
             UndoCommand = new RelayCommand(execute: async () => await UndoChanges());
@@ -181,7 +181,7 @@ namespace GenPhoto.ViewModels
 
             if (_availablePersons.Count == 0)
             {
-                _availablePersons.AddRange(await _repo.GetAvailablePersons());
+                _availablePersons.AddRange(await _api.GetAvailablePersons());
                 AvailablePersons.Refresh();
             }
 
@@ -219,13 +219,13 @@ namespace GenPhoto.ViewModels
 
                     case EntityState.Deleted:
                     case EntityState.Modified when string.IsNullOrWhiteSpace(item.Value):
-                        await _repo.RemoveMetaOnImage(Id, item.Key);
+                        await _api.RemoveMetaOnImage(Id, item.Key);
                         item.State = EntityState.Unmodified;
                         break;
 
                     case EntityState.Added:
                     case EntityState.Modified:
-                        await _repo.AddOrUpdateMetaOnImage(Id, item);
+                        await _api.AddOrUpdateMetaOnImage(Id, item);
                         item.State = EntityState.Unmodified;
                         break;
 
@@ -243,12 +243,12 @@ namespace GenPhoto.ViewModels
                 switch (p.State)
                 {
                     case EntityState.Added:
-                        await _repo.AddPersonToImage(Id, p.Id);
+                        await _api.AddPersonToImage(Id, p.Id);
                         p.State = EntityState.Unmodified;
                         break;
 
                     case EntityState.Deleted:
-                        await _repo.RemovePersonFromImage(Id, p.Id);
+                        await _api.RemovePersonFromImage(Id, p.Id);
                         Persons.Remove(p);
                         break;
 

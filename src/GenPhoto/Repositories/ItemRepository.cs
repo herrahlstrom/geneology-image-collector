@@ -5,11 +5,11 @@ using System.IO;
 
 namespace GenPhoto.Repositories
 {
-    public class ItemRepository
+    public class Api
     {
         private readonly EntityRepositoryFactory m_entityRepository;
 
-        public ItemRepository(AppState appState, EntityRepositoryFactory entityRepository, AppSettings settings)
+        public Api(AppState appState, EntityRepositoryFactory entityRepository, AppSettings settings)
         {
             AppState = appState;
             m_entityRepository = entityRepository;
