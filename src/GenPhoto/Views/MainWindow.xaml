@@ -63,6 +63,19 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border BorderBrush="#666" BorderThickness="0,0,0,1" Margin="0,0,0,5">
+                                <Border.Resources>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding FileMissing}" Value="True">
+                                                <Setter Property="Background" Value="#33ff0000" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Removed}" Value="True">
+                                                <Setter Property="Opacity" Value="0.3" />
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Resources>
                                 <ContentControl x:Name="cc" Content="{Binding}" ContentTemplate="{DynamicResource ImageDataTemple}"/>
                             </Border>
                             <DataTemplate.Triggers>

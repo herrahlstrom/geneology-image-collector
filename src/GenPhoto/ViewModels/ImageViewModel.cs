@@ -6,7 +6,7 @@ using GenPhoto.Repositories;
 using GenPhoto.Shared;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Printing;
+using System.IO;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -15,9 +15,9 @@ namespace GenPhoto.ViewModels
 {
     public class ImageViewModel : ViewModelBase
     {
+        private readonly Api _api;
         private readonly List<MetaItemViewModel> _meta = new();
         private readonly List<ImagePersonViewModel> _persons = new();
-        private readonly Api _api;
         private readonly AppSettings _settings;
         private List<KeyValuePair<Guid, string>> _availablePersons = new List<KeyValuePair<Guid, string>>();
         private bool _editMode;
@@ -25,8 +25,11 @@ namespace GenPhoto.ViewModels
         private ImageSource? _miniImage;
         private string _path = "";
         private string? _suggestedPath;
-        private Guid? selectedAvailablePerson;
         private string availablePersonsFilter = "";
+        private bool m_removed;
+
+        private Guid? selectedAvailablePerson;
+
 
         public ImageViewModel(Api api, AppSettings settings)
         {
@@ -60,7 +63,7 @@ namespace GenPhoto.ViewModels
                 {
                     if (selectedAvailablePerson is { } pId)
                     {
-                        var name = _availablePersons.Where(x => x.Key == pId).Select(x => (string?)x.Value).FirstOrDefault();
+                        var name = _availablePersons.Where(x => x.Key == pId).Select(x => x.Value).FirstOrDefault();
                         _persons.Add(new ImagePersonViewModel() { Id = pId, Name = name ?? "", State = EntityState.Added });
                         Persons.Refresh();
                     }
@@ -70,89 +73,15 @@ namespace GenPhoto.ViewModels
                 canExecute: () => SuggestedPath.HasValue() && SuggestedPath != Path,
                 execute: async () => await api.MoveImageFileToSuggestedPath(this));
 
-            EditCommand = new RelayCommand(execute: async () => await BeginEdit());
+            EditCommand = new RelayCommand(canExecute: () => !Removed, execute: async () => await BeginEdit());
             UndoCommand = new RelayCommand(execute: async () => await UndoChanges());
             SaveCommand = new RelayCommand(execute: async () => await SaveChanges());
+            DeleteCommand = new RelayCommand(canExecute: () => FileMissing, execute: async () => await DeleteImage());
 
             RemovePersonCommand = new RelayCommand<ImagePersonViewModel>(
                 canExecute: (ImagePersonViewModel? p) => p?.State != EntityState.Deleted,
                 execute: (ImagePersonViewModel? p) => { p!.State = EntityState.Deleted; });
         }
-
-        public ListCollectionView AvailablePersons { get; }
-        public string AvailablePersonsFilter
-        {
-            get => availablePersonsFilter;
-            set
-            {
-                availablePersonsFilter = value;
-                AvailablePersons.Refresh();
-            }
-        }
-        public Guid? SelectedAvailablePerson
-        {
-            get => selectedAvailablePerson;
-            set
-            {
-                selectedAvailablePerson = value;
-                AddPersonCommand.Revaluate();
-            }
-        }
-        public IRelayCommand EditCommand { get; }
-
-        public bool EditMode
-        {
-            get { return _editMode; }
-            set
-            {
-                SetProperty(ref _editMode, value);
-                Meta.Refresh();
-            }
-        }
-
-        public string FullPath => System.IO.Path.Combine(_settings.RootPath, Path);
-        public Guid Id { get; init; }
-
-        public ListCollectionView Meta { get; }
-
-        public ImageSource? MidiImage
-        {
-            get => _midiImage;
-            set => SetProperty(ref _midiImage, value);
-        }
-
-        public ImageSource? MiniImage
-        {
-            get => _miniImage;
-            set => SetProperty(ref _miniImage, value);
-        }
-
-        public IRelayCommand OpenFileCommand { get; }
-
-        public string Path
-        {
-            get => _path;
-            set => SetProperty(ref _path, value);
-        }
-
-        public ListCollectionView Persons { get; }
-        public IRelayCommand RemovePersonCommand { get; }
-
-        public IRelayCommand AddPersonCommand { get; }
-
-        public IRelayCommand RenameImageCommand { get; }
-
-        public IRelayCommand SaveCommand { get; }
-
-        public string? SuggestedPath
-        {
-            get => _suggestedPath;
-            set => SetProperty(ref _suggestedPath, value);
-        }
-
-        public string Title { get; init; } = "";
-
-        public IRelayCommand UndoCommand { get; }
 
         public void AddMeta(IEnumerable<MetaItemViewModel> meta)
         {
@@ -170,9 +99,15 @@ namespace GenPhoto.ViewModels
 
         public async Task BeginEdit()
         {
-            MidiImage ??= new BitmapImage(ImageHelper.GetImageDisplayPath(Id, FullPath, new(400, 400)));
-
-            await Task.Delay(1);
+            if (MidiImage is null && !FileMissing)
+            {
+                try
+                {
+                    var uri = ImageHelper.GetImageDisplayPath(Id, FullPath, new(400, 400));
+                    MidiImage = new BitmapImage(uri);
+                }
+                catch (FileNotFoundException) { }
+            }
 
             _meta.AddRange(from keyId in Enum.GetValues(typeof(ImageMetaKey)) as IList<int>
                            let key = Enum.GetName(typeof(ImageMetaKey), keyId)
@@ -186,6 +121,15 @@ namespace GenPhoto.ViewModels
             }
 
             EditMode = true;
+        }
+
+        public async Task DeleteImage()
+        {
+            EditMode = false;
+            EditCommand.Revaluate();
+
+            await _api.DeleteImage(Id);
+            Removed = true;
         }
 
         public bool HasMetaValue(string metaKey, string metaValue)
@@ -276,7 +220,93 @@ namespace GenPhoto.ViewModels
         {
             EditMode = false;
 
+            // ToDo: Ladda om datan från databasen
+
             await Task.Delay(1);
         }
+
+        public IRelayCommand AddPersonCommand { get; }
+
+        public ListCollectionView AvailablePersons { get; }
+        public string AvailablePersonsFilter
+        {
+            get => availablePersonsFilter;
+            set
+            {
+                availablePersonsFilter = value;
+                AvailablePersons.Refresh();
+            }
+        }
+        public IRelayCommand DeleteCommand { get; }
+        public IRelayCommand EditCommand { get; }
+
+        public bool EditMode
+        {
+            get { return _editMode; }
+            set
+            {
+                SetProperty(ref _editMode, value);
+                Meta.Refresh();
+            }
+        }
+
+        public required bool FileMissing { get; init; }
+
+        public string FullPath => System.IO.Path.Combine(_settings.RootPath, Path);
+        public Guid Id { get; init; }
+
+        public ListCollectionView Meta { get; }
+
+        public ImageSource? MidiImage
+        {
+            get => _midiImage;
+            set => SetProperty(ref _midiImage, value);
+        }
+
+        public ImageSource? MiniImage
+        {
+            get => _miniImage;
+            set => SetProperty(ref _miniImage, value);
+        }
+
+        public IRelayCommand OpenFileCommand { get; }
+
+        public string Path
+        {
+            get => _path;
+            set => SetProperty(ref _path, value);
+        }
+
+        public ListCollectionView Persons { get; }
+
+        public bool Removed
+        {
+            get { return m_removed; }
+            set { SetProperty(ref m_removed, value); }
+        }
+        public IRelayCommand RemovePersonCommand { get; }
+
+        public IRelayCommand RenameImageCommand { get; }
+
+        public IRelayCommand SaveCommand { get; }
+        public Guid? SelectedAvailablePerson
+        {
+            get => selectedAvailablePerson;
+            set
+            {
+                selectedAvailablePerson = value;
+                AddPersonCommand.Revaluate();
+            }
+        }
+
+        public string? SuggestedPath
+        {
+            get => _suggestedPath;
+            set => SetProperty(ref _suggestedPath, value);
+        }
+
+        public required string Title { get; init; }
+
+        public IRelayCommand UndoCommand { get; }
     }
 }

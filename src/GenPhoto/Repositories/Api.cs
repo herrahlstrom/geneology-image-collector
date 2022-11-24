@@ -111,6 +111,7 @@ namespace GenPhoto.Repositories
                     SuggestedPath = null,
                     MiniImage = null,
                     MidiImage = null,
+                    FileMissing = image.Missing
                 };
 
                 if (personsInImages.TryGetValue(image.Id, out var personsInImage))
@@ -138,7 +139,7 @@ namespace GenPhoto.Repositories
         public async Task<string> GetPersonName(Guid id)
         {
             using var repo = m_entityRepository.Create<Person>();
-            var entity = await repo.GetEntityAsync(id);
+            var entity = await repo.GetEntryAsync(id);
             return entity?.Name ?? string.Empty;
         }
 
@@ -181,14 +182,32 @@ namespace GenPhoto.Repositories
         {
             using var repo = m_entityRepository.Create<ImageMeta>();
 
-            await repo.RemoveEntityAsync(ImageMeta.GetKey(imageId, metaKey));
+            await repo.RemoveEntryAsync(ImageMeta.GetKey(imageId, metaKey));
+        }
+
+        public async Task DeleteImage(Guid imageId)
+        {
+            using (var repo = m_entityRepository.Create<PersonImage>())
+            {
+                await repo.RemoveWhereAsync(x => x.ImageId == imageId);
+            }
+
+            using (var repo = m_entityRepository.Create<ImageMeta>())
+            {
+                await repo.RemoveWhereAsync(x => x.ImageId == imageId);
+            }
+
+            using (var repo = m_entityRepository.Create<Image>())
+            {
+                await repo.RemoveEntryAsync(imageId);
+            }
         }
 
         public async Task RemovePersonFromImage(Guid imageId, Guid personId)
         {
             using var repo = m_entityRepository.Create<PersonImage>();
 
-            await repo.RemoveEntityAsync(imageId, personId);
+            await repo.RemoveEntryAsync(imageId, personId);
         }
 
         private static class CacheKey
