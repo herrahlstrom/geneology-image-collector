@@ -153,7 +153,7 @@ namespace GenPhoto.ViewModels
             {
                 lock (_loadImageQueueLock)
                 {
-                    if (item.MiniImage != null)
+                    if (item.MiniImage != null || item.FileMissing)
                     {
                         continue;
                     }

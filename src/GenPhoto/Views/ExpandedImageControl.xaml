@@ -93,12 +93,7 @@
         </StackPanel>
 
         <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-            <StackPanel.Resources>
-                <Style TargetType="Button">
-                    <Setter Property="Margin" Value="5,0,0,0" />
-                    <Setter Property="Padding" Value="7,3" />
-                </Style>
-            </StackPanel.Resources>
+            <Button Content="Radera" Command="{Binding DeleteCommand}" Background="Tomato" Style="{StaticResource HideButtonIfDisabled}" Margin="0,0,20,0" />
             <Button Content="Avbryt" Command="{Binding UndoCommand}" />
             <Button Content="Spara" Command="{Binding SaveCommand}" />
         </StackPanel>
