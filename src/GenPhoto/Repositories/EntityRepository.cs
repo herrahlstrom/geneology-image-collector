@@ -18,64 +18,54 @@ namespace GenPhoto.Repositories
             m_dbSet = m_db.Set<TEntity>();
         }
 
-        private void LogRemovedEntries(int numberOfAffectedEntries)
+        public async Task<bool> AddOrUpdateEntityAsync(
+            Func<TEntity> addAction,
+            Action<TEntity> updateAction,
+            params object[] keyValues)
         {
-            string entityTypeName = typeof(TEntity).Name;
-
-            switch (numberOfAffectedEntries)
-            {
-                case 0:
-                    m_logger.LogTrace("No entities removed from db set {set}", entityTypeName);
-                    break;
-                case 1:
-                    m_logger.LogTrace("Remove single entity from DB set {set}", entityTypeName);
-                    break;
-                default:
-                    m_logger.LogTrace("Remove {count} entities from DB set {set}", numberOfAffectedEntries, entityTypeName);
-                    break;
-            }
-        }
-
-        public async Task<bool> AddOrUpdateEntityAsync(Func<TEntity> addAction, Action<TEntity> updateAction, params object[] keyValues)
-        {
-            if (await m_dbSet.FindAsync(keyValues) is { } entity)
+            bool updated = false;
+            if(await m_dbSet.FindAsync(keyValues) is { } entity)
             {
                 updateAction.Invoke(entity);
+                updated = true;
             }
             else
             {
                 entity = addAction();
-                if (entity != null)
+                if(entity != null)
                 {
                     m_dbSet.Add(entity);
                 }
             }
-            return await m_db.SaveChangesAsync() > 0;
+            var result = await m_db.SaveChangesAsync();
+
+            if(updated)
+            {
+                m_logger.LogTrace("Updated {count} entities in DB set {set}", result, typeof(TEntity).Name);
+            }
+            else
+            {
+                m_logger.LogTrace("Add {count} entities to DB set {set}", result, typeof(TEntity).Name);
+            }
+
+            return result > 0;
         }
 
-        public void Dispose()
-        {
-            m_db.Dispose();
-        }
+        public void Dispose() { m_db.Dispose(); }
 
-        public async Task<IList<TEntity>> GetEntitiesAsync()
-        {
-            return await m_dbSet.ToListAsync();
-        }
+        public async Task<IList<TEntity>> GetEntitiesAsync() { return await m_dbSet.ToListAsync(); }
 
         public async Task<TEntity?> GetEntryAsync(params object[] keyValues)
-        {
-            return await m_dbSet.FindAsync(keyValues);
-        }
+        { return await m_dbSet.FindAsync(keyValues); }
 
         public async Task<int> RemoveEntryAsync(params object[] keyValues)
         {
-            if (await m_dbSet.FindAsync(keyValues) is { } entity)
+            if(await m_dbSet.FindAsync(keyValues) is { } entity)
             {
                 m_dbSet.Remove(entity);
                 int result = await m_db.SaveChangesAsync();
 
-                LogRemovedEntries(result);
+                m_logger.LogTrace("Remove {count} entities from DB set {set}", result, typeof(TEntity).Name);
 
                 return result;
             }
@@ -86,30 +76,21 @@ namespace GenPhoto.Repositories
         public async Task<int> RemoveWhereAsync(Expression<Func<TEntity, bool>> predicate)
         {
             var entities = await m_dbSet.Where(predicate).ToListAsync();
-            if (entities.Count == 0)
+            if(entities.Count == 0)
             {
                 return 0;
             }
 
-            foreach (var entity in entities)
+            foreach(var entity in entities)
             {
                 m_dbSet.Remove(entity);
             }
 
             var result = await m_db.SaveChangesAsync();
 
-            LogRemovedEntries(result);
+            m_logger.LogTrace("Remove {count} entities from DB set {set}", result, typeof(TEntity).Name);
 
             return result;
-        }
-
-        public async Task<bool> UpdateEntityAsync(Action<TEntity> updateAction, params object[] keyValues)
-        {
-            if (await m_dbSet.FindAsync(keyValues) is { } entity)
-            {
-                updateAction.Invoke(entity);
-            }
-            return await m_db.SaveChangesAsync() > 0;
         }
     }
 
