@@ -111,6 +111,7 @@ namespace GenPhoto.Repositories
                     SuggestedPath = null,
                     MiniImage = null,
                     MidiImage = null,
+                    FileMissing = image.Missing
                 };
 
                 if (personsInImages.TryGetValue(image.Id, out var personsInImage))
@@ -138,7 +139,7 @@ namespace GenPhoto.Repositories
         public async Task<string> GetPersonName(Guid id)
         {
             using var repo = m_entityRepository.Create<Person>();
-            var entity = await repo.GetEntityAsync(id);
+            var entity = await repo.GetEntryAsync(id);
             return entity?.Name ?? string.Empty;
         }
 
@@ -151,27 +152,29 @@ namespace GenPhoto.Repositories
 
             using var repo = m_entityRepository.Create<Image>();
 
-            await repo.UpdateEntityAsync((entity) =>
-            {
-                string fullPathFrom = Path.Combine(m_settings.RootPath, entity.Path);
-                string fullPathTo = Path.Combine(m_settings.RootPath, suggestedPath);
+            await repo.AddOrUpdateEntityAsync(
+                addAction: () => throw new InvalidOperationException(),
+                updateAction: (entity) =>
+                {
+                    string fullPathFrom = Path.Combine(m_settings.RootPath, entity.Path);
+                    string fullPathTo = Path.Combine(m_settings.RootPath, suggestedPath);
 
-                try
-                {
-                    File.Move(fullPathFrom, fullPathTo);
-                }
-                catch (FileNotFoundException) when (File.Exists(fullPathTo) && new FileInfo(fullPathTo).Length == entity.Size)
-                {
-                    File.Delete(fullPathFrom);
-                }
-                catch (DirectoryNotFoundException)
-                {
-                    new FileInfo(fullPathTo).Directory!.Create();
-                    File.Move(fullPathFrom, fullPathTo);
-                }
+                    try
+                    {
+                        File.Move(fullPathFrom, fullPathTo);
+                    }
+                    catch (FileNotFoundException) when (File.Exists(fullPathTo) && new FileInfo(fullPathTo).Length == entity.Size)
+                    {
+                        File.Delete(fullPathFrom);
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        new FileInfo(fullPathTo).Directory!.Create();
+                        File.Move(fullPathFrom, fullPathTo);
+                    }
 
-                entity.Path = suggestedPath;
-            }, model.Id);
+                    entity.Path = suggestedPath;
+                }, model.Id);
 
             model.Path = suggestedPath;
             model.SuggestedPath = null;
@@ -181,14 +184,32 @@ namespace GenPhoto.Repositories
         {
             using var repo = m_entityRepository.Create<ImageMeta>();
 
-            await repo.RemoveEntityAsync(ImageMeta.GetKey(imageId, metaKey));
+            await repo.RemoveEntryAsync(ImageMeta.GetKey(imageId, metaKey));
+        }
+
+        public async Task DeleteImage(Guid imageId)
+        {
+            using (var repo = m_entityRepository.Create<PersonImage>())
+            {
+                await repo.RemoveWhereAsync(x => x.ImageId == imageId);
+            }
+
+            using (var repo = m_entityRepository.Create<ImageMeta>())
+            {
+                await repo.RemoveWhereAsync(x => x.ImageId == imageId);
+            }
+
+            using (var repo = m_entityRepository.Create<Image>())
+            {
+                await repo.RemoveEntryAsync(imageId);
+            }
         }
 
         public async Task RemovePersonFromImage(Guid imageId, Guid personId)
         {
             using var repo = m_entityRepository.Create<PersonImage>();
 
-            await repo.RemoveEntityAsync(imageId, personId);
+            await repo.RemoveEntryAsync(imageId, personId);
         }
 
         private static class CacheKey

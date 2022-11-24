@@ -7,7 +7,12 @@
         
         <infrastructure:ServiceLocator x:Key="ServiceLocator" />
 
-        <Style TargetType="{x:Type FrameworkElement}" x:Key="HideIfDisabled">
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="Margin" Value="5,0,0,0" />
+            <Setter Property="Padding" Value="7,3" />
+        </Style>
+
+        <Style TargetType="{x:Type Button}" x:Key="HideButtonIfDisabled" BasedOn="{StaticResource {x:Type Button}}">
             <Style.Triggers>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="Visibility" Value="Collapsed" />

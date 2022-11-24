@@ -68,7 +68,7 @@ internal class MainViewModel : ViewModelBase
         {
             lock (m_loadImageQueueLock)
             {
-                if (item.MiniImage != null)
+                if (item.MiniImage != null || item.FileMissing)
                 {
                     continue;
                 }
