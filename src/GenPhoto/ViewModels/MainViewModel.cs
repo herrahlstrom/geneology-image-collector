@@ -1,250 +1,138 @@
-﻿using GenPhoto.Helpers;
+﻿using GenPhoto.Extensions;
+using GenPhoto.Helpers;
 using GenPhoto.Infrastructure;
-using GenPhoto.Models;
 using GenPhoto.Repositories;
-using GenPhoto.Shared;
-using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
-using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
-using Timer = System.Timers.Timer;
 
-namespace GenPhoto.ViewModels
+
+namespace GenPhoto.ViewModels;
+
+internal class MainViewModel : ViewModelBase
 {
-    internal class MainViewModel : ViewModelBase
+    static readonly object m_loadImageQueueLock = new object();
+    private readonly List<FilterOption> m_filterOptions = new List<FilterOption>();
+
+    private readonly System.Timers.Timer m_inputTimer;
+    private readonly Api m_itemRepo;
+    private readonly List<ImageViewModel> m_items = new List<ImageViewModel>();
+    private ConcurrentQueue<ImageViewModel> m_loadImageQueue = new();
+    ImageSearcher m_searcher;
+
+    public MainViewModel(Api itemRepo)
     {
-        private const int DefaultMaxFilteredItems = 10;
+        m_searcher = new ImageSearcher();
 
-        static readonly object _loadImageQueueLock = new object();
-        private readonly List<FilterOption> _filterOptions = new List<FilterOption>();
-        private Timer _inputTimer;
-        private readonly Api _itemRepo;
-        private readonly List<ImageViewModel> _items = new List<ImageViewModel>();
-        private ConcurrentQueue<ImageViewModel> _loadImageQueue = new();
-        readonly HashSet<Guid> m_filteredItems = new HashSet<Guid>();
-        private HashSet<Guid> m_hiddenFilteredItems = new HashSet<Guid>();
-        private string m_searchFilter = "";
-        private string[] m_searchFilterArray = Array.Empty<string>();
+        Items = new ListCollectionView(m_items) { Filter = FilterItem };
 
-        public MainViewModel(Api itemRepo)
+        FilterOptions = new ListCollectionView(m_filterOptions)
         {
-            _inputTimer = new()
-            {
-                Interval = TimeSpan.FromMilliseconds(400).TotalMilliseconds,
-                AutoReset = false
-            };
-            _inputTimer.Elapsed += (_, _) => Filter(true);
+            Filter = (obj) => obj is FilterOption { } option && option.Options.Any(x => x.Key != "")
+        };
 
-            Items = new ListCollectionView(_items) { Filter = FilterItem };
-
-            FilterOptions = new ListCollectionView(_filterOptions)
-            {
-                Filter = (obj) => obj is FilterOption { Options.Count: > 0 }
-            };
-
-            LoadCommand = new RelayCommand(LoadCommand_Execute);
-
-            _itemRepo = itemRepo;
-            PropertyChanged += OnPropertyChanged;
-        }
-
-        private void Filter(bool rebuildOptions)
+        m_inputTimer = new() { AutoReset = false };
+        m_inputTimer.Elapsed += (_, _) =>
         {
-            Items.Dispatcher.Invoke(Items.Refresh);
+            m_searcher.BeforeFilter();
+            RefreshItems(refreshOptions: true);
+        };
 
-            var filteredItems = Items.OfType<ImageViewModel>().ToList();
+        LoadCommand = new RelayCommand(LoadCommand_Execute);
 
-            if (rebuildOptions)
-            {
-                m_hiddenFilteredItems.Clear();
-                m_maxFilteredItems = DefaultMaxFilteredItems;
-                m_filteredItems.Clear();
+        m_itemRepo = itemRepo;
+    }
 
-                RebuildFilterOptions(filteredItems);
-            }
-
-            foreach (var item in filteredItems.Where(x => x.MiniImage is null).Take(20))
-            {
-                _loadImageQueue.Enqueue(item);
-            }
-
-            if (!_loadImageQueue.IsEmpty)
-            {
-                new Thread(new ThreadStart(ProcessImageQueue)).Start();
-            }
-        }
-
-        private static bool FilterByOptions(ImageViewModel item, FilterOption filterOption)
+    private bool FilterItem(object obj)
+    {
+        if (obj is not ImageViewModel item)
         {
-            if (string.IsNullOrEmpty(filterOption.SelectedOption))
-            {
-                return true;
-            }
-            else if (filterOption.Key == "person" && Guid.TryParse(filterOption.SelectedOption, out var personId))
-            {
-                if (personId == Guid.Empty || item.HasPerson(personId))
-                {
-                    return true;
-                }
-            }
-            else if (filterOption.Key.StartsWith("meta."))
-            {
-                var key = filterOption.Key[5..];
-                if (item.HasMetaValue(key, filterOption.SelectedOption))
-                {
-                    return true;
-                }
-            }
-
             return false;
         }
 
-        private bool FilterItem(object obj)
+        return m_searcher.FilterItem(item, m_filterOptions);
+    }
+    private async void LoadCommand_Execute()
+    {
+        var items = await m_itemRepo.GetItemsAsync();
+        m_items.AddRange(items);
+        Items.Refresh();
+    }
+
+    private void ProcessImageQueue()
+    {
+        while (m_loadImageQueue.TryDequeue(out var item))
         {
-            if (obj is not ImageViewModel item || m_searchFilterArray.Length == 0)
+            lock (m_loadImageQueueLock)
             {
-                return false;
-            }
+                if (item.MiniImage != null)
+                {
+                    continue;
+                }
 
-            if (!m_filteredItems.Contains(item.Id) && (m_filteredItems.Count >= m_maxFilteredItems))
-            {
-                m_hiddenFilteredItems.Add(item.Id);
-                return false;
+                try
+                {
+                    var uri = ImageHelper.GetImageDisplayPath(item.Id, item.FullPath, new(200, 200));
+                    Items.Dispatcher.Invoke(() => item.MiniImage = new BitmapImage(uri));
+                }
+                catch (ExternalException) { }
+                catch (FileNotFoundException) { }
             }
+        }
+    }
 
-            var result1 = m_searchFilterArray.All(item.IsMatch);
-            if (result1)
+    private void RefreshItems(bool refreshOptions)
+    {
+        Items.Dispatcher.Invoke(Items.Refresh);
+
+        List<ImageViewModel> filteredItems = Items.OfType<ImageViewModel>().ToList();
+
+        if (refreshOptions)
+        {
+            FilterOptions.Dispatcher.Invoke(
+                () =>
+                {
+                    var options = m_searcher.BuildFilterOptions(
+                        filteredItems,
+                        () => RefreshItems(refreshOptions: false));
+                    m_filterOptions.Clear();
+                    m_filterOptions.AddRange(options);
+                    FilterOptions.Refresh();
+                });
+        }
+
+        m_loadImageQueue.EnqueueRange(filteredItems.Where(x => x.MiniImage is null).Take(20));
+
+        if (!m_loadImageQueue.IsEmpty)
+        {
+            new Thread(new ThreadStart(ProcessImageQueue)).Start();
+        }
+    }
+
+    public ListCollectionView FilterOptions { get; }
+    public string FilterText
+    {
+        get => m_searcher.FilterText;
+        set
+        {
+            m_searcher.FilterText = value;
+
+            if (value?.Length > 4)
             {
-                m_filteredItems.Add(item.Id);
+                m_inputTimer.Interval = TimeSpan.FromMilliseconds(250).TotalMilliseconds;
             }
             else
             {
-                return false;
+                m_inputTimer.Interval = TimeSpan.FromMilliseconds(750).TotalMilliseconds;
             }
-
-            var result2 = _filterOptions.All(filterOption => FilterByOptions(item, filterOption));
-            if (!result2)
-            {
-                return false;
-            }
-
-            return true;
+            m_inputTimer.Start();
         }
-
-        private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(FilterText))
-            {
-                _inputTimer.Enabled = false;
-                m_searchFilterArray = string.IsNullOrWhiteSpace(FilterText)
-                    ? Array.Empty<string>()
-                    : FilterText.Split(" ", StringSplitOptions.RemoveEmptyEntries);
-                _inputTimer.Start();
-            }
-        }
-
-        private void ProcessImageQueue()
-        {
-            while (_loadImageQueue.TryDequeue(out var item))
-            {
-                lock (_loadImageQueueLock)
-                {
-                    if (item.MiniImage != null)
-                    {
-                        continue;
-                    }
-
-                    try
-                    {
-                        var uri = ImageHelper.GetImageDisplayPath(item.Id, item.FullPath, new(200, 200));
-                        Items.Dispatcher.Invoke(() => item.MiniImage = new BitmapImage(uri));
-                    }
-                    catch (ExternalException) { }
-                    catch (FileNotFoundException) { }
-                }
-            }
-        }
-
-        private void RebuildFilterOptions(List<ImageViewModel> filteredItems)
-        {
-            FilterOptions.Dispatcher.Invoke(_filterOptions.Clear);
-
-            // Filter option | Person
-            _filterOptions.Add(new FilterOption()
-            {
-                Key = "person",
-                Name = "Person",
-                Options = filteredItems
-                        .SelectMany(x => x.Persons.OfType<ImagePersonViewModel>().Select(y => new { y.Id, y.Name }))
-                        .Append(new { Id = Guid.Empty, Name = "" })
-                        .Distinct()
-                        .OrderBy(x => x.Name)
-                        .Select(x => new KeyValuePair<string, string>(x.Id.ToString(), x.Name))
-                        .ToList(),
-                SelectedOptionChangedCallback = () => Filter(false)
-            });
-
-            // Filter option | Repository
-            _filterOptions.Add(new FilterOption()
-            {
-                Key = $"meta.{ImageMetaKey.Repository}",
-                Name = "Arkiv",
-                Options = filteredItems
-                    .SelectMany(x => x.Meta.OfType<MetaItemViewModel>())
-                    .Where(x => x.Key == nameof(ImageMetaKey.Repository))
-                    .Select(x => x.Value)
-                    .Append("")
-                    .Distinct()
-                    .OrderBy(x => x)
-                    .Select(x => new KeyValuePair<string, string>(x, x))
-                    .ToList(),
-                SelectedOptionChangedCallback = () => Filter(false)
-            });
-
-            // Filter option | Volume
-            _filterOptions.Add(new FilterOption()
-            {
-                Key = $"meta.{ImageMetaKey.Volume}",
-                Name = "Volym",
-                Options = filteredItems
-                    .SelectMany(x => x.Meta.OfType<MetaItemViewModel>())
-                    .Where(x => x.Key == nameof(ImageMetaKey.Volume))
-                    .Select(x => x.Value)
-                    .Append("")
-                    .Distinct()
-                    .OrderBy(x => x)
-                    .Select(x => new KeyValuePair<string, string>(x, x))
-                    .ToList(),
-                SelectedOptionChangedCallback = () => Filter(false)
-            });
-
-            FilterOptions.Dispatcher.Invoke(FilterOptions.Refresh);
-
-        }
-
-        protected async void LoadCommand_Execute()
-        {
-            _items.AddRange(await _itemRepo.GetItemsAsync());
-            Items.Refresh();
-        }
-
-        public ListCollectionView FilterOptions { get; }
-
-        public string FilterText
-        {
-            get => m_searchFilter;
-            set => SetProperty(ref m_searchFilter, value);
-        }
-
-        public ListCollectionView Items { get; }
-        public IRelayCommand LoadCommand { get; }
-
-        public string Title => string.IsNullOrWhiteSpace(FilterText) ? "Gen Photo" : "Gen Photo | " + FilterText;
-
-        private int m_maxFilteredItems = DefaultMaxFilteredItems;
     }
+    public ListCollectionView Items { get; }
+    public IRelayCommand LoadCommand { get; }
+
+    public string Title => string.IsNullOrWhiteSpace(FilterText) ? "Gen Photo" : "Gen Photo | " + FilterText;
 }
