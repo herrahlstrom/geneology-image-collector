@@ -152,27 +152,29 @@ namespace GenPhoto.Repositories
 
             using var repo = m_entityRepository.Create<Image>();
 
-            await repo.UpdateEntityAsync((entity) =>
-            {
-                string fullPathFrom = Path.Combine(m_settings.RootPath, entity.Path);
-                string fullPathTo = Path.Combine(m_settings.RootPath, suggestedPath);
+            await repo.AddOrUpdateEntityAsync(
+                addAction: () => throw new InvalidOperationException(),
+                updateAction: (entity) =>
+                {
+                    string fullPathFrom = Path.Combine(m_settings.RootPath, entity.Path);
+                    string fullPathTo = Path.Combine(m_settings.RootPath, suggestedPath);
 
-                try
-                {
-                    File.Move(fullPathFrom, fullPathTo);
-                }
-                catch (FileNotFoundException) when (File.Exists(fullPathTo) && new FileInfo(fullPathTo).Length == entity.Size)
-                {
-                    File.Delete(fullPathFrom);
-                }
-                catch (DirectoryNotFoundException)
-                {
-                    new FileInfo(fullPathTo).Directory!.Create();
-                    File.Move(fullPathFrom, fullPathTo);
-                }
+                    try
+                    {
+                        File.Move(fullPathFrom, fullPathTo);
+                    }
+                    catch (FileNotFoundException) when (File.Exists(fullPathTo) && new FileInfo(fullPathTo).Length == entity.Size)
+                    {
+                        File.Delete(fullPathFrom);
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        new FileInfo(fullPathTo).Directory!.Create();
+                        File.Move(fullPathFrom, fullPathTo);
+                    }
 
-                entity.Path = suggestedPath;
-            }, model.Id);
+                    entity.Path = suggestedPath;
+                }, model.Id);
 
             model.Path = suggestedPath;
             model.SuggestedPath = null;
