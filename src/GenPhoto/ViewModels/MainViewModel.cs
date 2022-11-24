@@ -62,37 +62,16 @@ internal class MainViewModel : ViewModelBase
         Items.Refresh();
     }
 
-            var result2 = _filterOptions.All(filterOption => FilterByOptions(item, filterOption));
-            if (!result2)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private void ProcessImageQueue()
+    {
+        while (m_loadImageQueue.TryDequeue(out var item))
         {
-            if (e.PropertyName == nameof(FilterText))
+            lock (m_loadImageQueueLock)
             {
-                _inputTimer.Enabled = false;
-                m_searchFilterArray = string.IsNullOrWhiteSpace(FilterText)
-                    ? Array.Empty<string>()
-                    : FilterText.Split(" ", StringSplitOptions.RemoveEmptyEntries);
-                _inputTimer.Start();
-            }
-        }
-
-        private void ProcessImageQueue()
-        {
-            while (_loadImageQueue.TryDequeue(out var item))
-            {
-                lock (_loadImageQueueLock)
+                if (item.MiniImage != null || item.FileMissing)
                 {
-                    if (item.MiniImage != null || item.FileMissing)
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
                 try
                 {
