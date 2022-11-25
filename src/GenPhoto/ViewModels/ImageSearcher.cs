@@ -1,4 +1,5 @@
 ﻿using GenPhoto.Extensions;
+using GenPhoto.Infrastructure;
 using GenPhoto.Models;
 using GenPhoto.Shared;
 
@@ -6,15 +7,8 @@ namespace GenPhoto.ViewModels;
 
 class ImageSearcher
 {
-    private const int DefaultMaxFilteredItems = 10;
-
-    private readonly HashSet<Guid> m_filteredItems = new HashSet<Guid>();
-
     private string m_filterText = "";
-    private HashSet<Guid> m_hiddenFilteredItems = new HashSet<Guid>();
-
-    private int m_maxFilteredItems = DefaultMaxFilteredItems;
-
+ 
     private string[] m_searchFilterArray = Array.Empty<string>();
 
     private static bool FilterByOptions(ImageViewModel item, FilterOption filterOption)
@@ -47,10 +41,6 @@ class ImageSearcher
         m_searchFilterArray = string.IsNullOrWhiteSpace(m_filterText)
             ? Array.Empty<string>()
             : m_filterText.Split(" ", StringSplitOptions.RemoveEmptyEntries);
-
-        m_hiddenFilteredItems.Clear();
-        m_maxFilteredItems = DefaultMaxFilteredItems;
-        m_filteredItems.Clear();
     }
 
     public IEnumerable<FilterOption> BuildFilterOptions(IList<ImageViewModel> filteredItems, Action selectedOptionChangedCallback)
@@ -112,30 +102,14 @@ class ImageSearcher
             return false;
         }
 
-        if (!m_filteredItems.Contains(item.Id) && m_filteredItems.Count >= m_maxFilteredItems)
+        if (m_searchFilterArray.All(item.IsMatch) &&
+            filterOptions.All(filterOption => FilterByOptions(item, filterOption)))
         {
-            m_hiddenFilteredItems.Add(item.Id);
-            return false;
+            return true;
         }
 
-        var result1 = m_searchFilterArray.All(item.IsMatch);
-        if (result1)
-        {
-            m_filteredItems.Add(item.Id);
-        }
-        else
-        {
-            return false;
-        }
+        return false;
 
-        var result2 = filterOptions.All(filterOption => FilterByOptions(item, filterOption));
-        if (!result2)
-        {
-            return false;
-        }
-
-        return true;
     }
-
     public string FilterText { get => m_filterText; set => m_filterText = value; }
 }

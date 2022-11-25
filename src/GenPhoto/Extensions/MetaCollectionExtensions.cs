@@ -1,4 +1,5 @@
-﻿using GenPhoto.Models;
+﻿using GenPhoto.Helpers;
+using GenPhoto.Models;
 using GenPhoto.Shared;
 
 namespace GenPhoto.Extensions
@@ -30,7 +31,7 @@ namespace GenPhoto.Extensions
 
             if (meta.GetValue(ImageMetaKey.Volume) is { Length: > 0 } volume)
             {
-                result.Append(volume.Replace(":", " "));
+                result.Append(VolumeFormatter.GetFormattedValue(volume));
             }
             else
             {

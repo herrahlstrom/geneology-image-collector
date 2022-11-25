@@ -287,7 +287,6 @@ namespace GenPhoto.ViewModels
         public IRelayCommand RemovePersonCommand { get; }
 
         public IRelayCommand RenameImageCommand { get; }
-
         public IRelayCommand SaveCommand { get; }
         public Guid? SelectedAvailablePerson
         {

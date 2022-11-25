@@ -66,13 +66,13 @@ internal class MainViewModel : ViewModelBase
     {
         while (m_loadImageQueue.TryDequeue(out var item))
         {
+            if (item.MiniImage != null || item.FileMissing)
+            {
+                continue;
+            }
+
             lock (m_loadImageQueueLock)
             {
-                if (item.MiniImage != null || item.FileMissing)
-                {
-                    continue;
-                }
-
                 try
                 {
                     var uri = ImageHelper.GetImageDisplayPath(item.Id, item.FullPath, new(200, 200));
@@ -133,6 +133,8 @@ internal class MainViewModel : ViewModelBase
     }
     public ListCollectionView Items { get; }
     public IRelayCommand LoadCommand { get; }
+
+    public IRelayCommand RenameImageCommand { get; }
 
     public string Title => string.IsNullOrWhiteSpace(FilterText) ? "Gen Photo" : "Gen Photo | " + FilterText;
 }
