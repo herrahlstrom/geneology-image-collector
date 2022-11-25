@@ -70,6 +70,8 @@ namespace GenPhoto.Repositories
 
         public async Task<ICollection<ImageViewModel>> GetItemsAsync()
         {
+            using var logger = new ScopedStopwatchLogger(m_logger, LogLevel.Trace, "Get items from database");
+
             IList<Image> images = await GetEntities<Image>();
 
             var personsInImages = (
@@ -126,6 +128,8 @@ namespace GenPhoto.Repositories
 
                 result.Add(model);
             }
+            
+            logger.AppentText("{} images", result.Count);
 
             return result;
 
