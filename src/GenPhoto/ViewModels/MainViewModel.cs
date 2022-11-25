@@ -9,7 +9,6 @@ using System.Threading;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 
-
 namespace GenPhoto.ViewModels;
 
 internal class MainViewModel : ViewModelBase
@@ -35,15 +34,31 @@ internal class MainViewModel : ViewModelBase
         };
 
         m_inputTimer = new() { AutoReset = false };
-        m_inputTimer.Elapsed += (_, _) =>
-        {
-            m_searcher.BeforeFilter();
-            RefreshItems(refreshOptions: true);
-        };
+        m_inputTimer.Elapsed += async (_, _) => await OnFilterChangedAsync();
 
         LoadCommand = new RelayCommand(LoadCommand_Execute);
 
         m_itemRepo = itemRepo;
+    }
+
+    private async Task OnFilterChangedAsync()
+    {
+        m_searcher.BeforeFilter();
+
+        if (m_itemsEndOfLife < DateTimeOffset.Now)
+        {
+            await UpdateItems();
+        }
+
+        RefreshItems(refreshOptions: true);
+    }
+
+    private async Task UpdateItems()
+    {
+        var items = await m_itemRepo.GetItemsAsync();
+        m_items.Clear();
+        m_items.AddRange(items);
+        m_itemsEndOfLife = DateTimeOffset.Now + TimeSpan.FromMinutes(5);
     }
 
     private bool FilterItem(object obj)
@@ -57,10 +72,9 @@ internal class MainViewModel : ViewModelBase
     }
     private async void LoadCommand_Execute()
     {
-        var items = await m_itemRepo.GetItemsAsync();
-        m_items.AddRange(items);
-        Items.Refresh();
     }
+
+    DateTimeOffset m_itemsEndOfLife = DateTimeOffset.MinValue;
 
     private void ProcessImageQueue()
     {
