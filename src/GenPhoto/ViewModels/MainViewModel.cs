@@ -158,6 +158,8 @@ internal class MainViewModel : ViewModelBase
         m_items.Clear();
         m_items.AddRange(items);
         m_itemsEndOfLife = DateTimeOffset.Now + TimeSpan.FromMinutes(5);
+
+        SetStatusText($"Laddar om bilder, {items.Count} bilder inladdade.", TimeSpan.FromSeconds(7));
     }
 
     public IRelayCommand DetectMissingFilesCommand { get; }
