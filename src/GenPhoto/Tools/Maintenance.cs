@@ -56,7 +56,7 @@ namespace GenPhoto.Tools
             }
         }
 
-        public async Task DetectMissingFilesAsync()
+        public async Task<(int missing, int refound)> DetectMissingFilesAsync()
         {
             using var db = await _dbFactory.CreateDbContextAsync();
 
@@ -64,32 +64,36 @@ namespace GenPhoto.Tools
 
             var dbFiles = await db.Images.ToListAsync();
 
-            int changes = 0;
+            int missingResult = 0;
+            int refoundResult = 0;
 
             foreach (var entity in dbFiles)
             {
                 bool missing = !files.Contains(entity.Path);
 
-                if (missing && !entity.Missing || !missing && entity.Missing)
+                if (missing && !entity.Missing)
                 {
                     entity.Missing = missing;
-                    changes++;
+                    missingResult++;
+                }
+                else if (!missing && entity.Missing)
+                {
+                    entity.Missing = missing;
+                    refoundResult++;
                 }
             }
-            if (changes == 0)
-            {
-                return;
-            }
 
-            if (changes > 1)
+            if (missingResult > 0 || refoundResult > 0)
             {
                 Debugger.Break();
             }
 
             await db.SaveChangesAsync();
+
+            return (missingResult, refoundResult);
         }
 
-        public async Task FindNewFilesAsync()
+        public async Task<int> FindNewFilesAsync()
         {
             using var db = await _dbFactory.CreateDbContextAsync();
 
@@ -100,7 +104,7 @@ namespace GenPhoto.Tools
             var newFiles = files.Where(x => !dbFiles.Contains(x)).ToList();
             if (newFiles.Count == 0)
             {
-                return;
+                return 0;
             }
 
             var defualtImageTypeId = await db.ImageTypes.Where(x => x.Key == "").Select(x => x.Id).SingleAsync();
@@ -120,7 +124,9 @@ namespace GenPhoto.Tools
                 db.Images.Add(entity);
             }
 
-            await db.SaveChangesAsync();
+            int result = await db.SaveChangesAsync();
+
+            return result;
         }
 
         public async Task OneTimeFix()

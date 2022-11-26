@@ -2,7 +2,9 @@
 using GenPhoto.Helpers;
 using GenPhoto.Infrastructure;
 using GenPhoto.Repositories;
+using GenPhoto.Tools;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -19,10 +21,15 @@ internal class MainViewModel : ViewModelBase
     private readonly System.Timers.Timer m_inputTimer;
     private readonly Api m_itemRepo;
     private readonly List<ImageViewModel> m_items = new List<ImageViewModel>();
+
+    DateTimeOffset m_itemsEndOfLife = DateTimeOffset.MinValue;
     private ConcurrentQueue<ImageViewModel> m_loadImageQueue = new();
     ImageSearcher m_searcher;
+    private string m_statusText = "";
 
-    public MainViewModel(Api itemRepo)
+    private System.Timers.Timer m_statusTextClearTimer;
+
+    public MainViewModel(Api itemRepo, Maintenance maintenance)
     {
         m_searcher = new ImageSearcher();
 
@@ -38,7 +45,38 @@ internal class MainViewModel : ViewModelBase
 
         LoadCommand = new RelayCommand(LoadCommand_Execute);
 
+        SearchNewFilesCommand = new RelayCommand(async () =>
+        {
+            var sw = Stopwatch.StartNew();
+            int result = await maintenance.FindNewFilesAsync();
+            sw.Stop();
+            SetStatusText($"Sökning av nya bilder slutförd. {result} nya bilder, {sw.ElapsedMilliseconds} ms.", TimeSpan.FromSeconds(7));
+        });
+        DetectMissingFilesCommand = new RelayCommand(async () =>
+        {
+            var sw = Stopwatch.StartNew();
+            (int missing, int refound) = await maintenance.DetectMissingFilesAsync();
+            sw.Stop();
+            SetStatusText($"Sökning av saknader bilder slutförd. {missing} bilder saknade, {refound} bilder återfunna, {sw.ElapsedMilliseconds} ms.", TimeSpan.FromSeconds(7));
+        });
+
         m_itemRepo = itemRepo;
+
+        m_statusTextClearTimer = new System.Timers.Timer() { AutoReset = false };
+        m_statusTextClearTimer.Elapsed += (_, _) => { StatusText = ""; };
+    }
+
+    private bool FilterItem(object obj)
+    {
+        if (obj is not ImageViewModel item)
+        {
+            return false;
+        }
+
+        return m_searcher.FilterItem(item, m_filterOptions);
+    }
+    private void LoadCommand_Execute()
+    {
     }
 
     private async Task OnFilterChangedAsync()
@@ -52,29 +90,6 @@ internal class MainViewModel : ViewModelBase
 
         RefreshItems(refreshOptions: true);
     }
-
-    private async Task UpdateItems()
-    {
-        var items = await m_itemRepo.GetItemsAsync();
-        m_items.Clear();
-        m_items.AddRange(items);
-        m_itemsEndOfLife = DateTimeOffset.Now + TimeSpan.FromMinutes(5);
-    }
-
-    private bool FilterItem(object obj)
-    {
-        if (obj is not ImageViewModel item)
-        {
-            return false;
-        }
-
-        return m_searcher.FilterItem(item, m_filterOptions);
-    }
-    private async void LoadCommand_Execute()
-    {
-    }
-
-    DateTimeOffset m_itemsEndOfLife = DateTimeOffset.MinValue;
 
     private void ProcessImageQueue()
     {
@@ -126,6 +141,27 @@ internal class MainViewModel : ViewModelBase
         }
     }
 
+    private void SetStatusText(string text, TimeSpan? autoClear = null)
+    {
+        m_statusTextClearTimer.Enabled = false;
+        StatusText = text;
+        if (autoClear is TimeSpan ts)
+        {
+            m_statusTextClearTimer.Interval = ts.TotalMilliseconds;
+            m_statusTextClearTimer.Start();
+        }
+    }
+
+    private async Task UpdateItems()
+    {
+        var items = await m_itemRepo.GetItemsAsync();
+        m_items.Clear();
+        m_items.AddRange(items);
+        m_itemsEndOfLife = DateTimeOffset.Now + TimeSpan.FromMinutes(5);
+    }
+
+    public IRelayCommand DetectMissingFilesCommand { get; }
+
     public ListCollectionView FilterOptions { get; }
     public string FilterText
     {
@@ -147,8 +183,9 @@ internal class MainViewModel : ViewModelBase
     }
     public ListCollectionView Items { get; }
     public IRelayCommand LoadCommand { get; }
+    public IRelayCommand SearchNewFilesCommand { get; }
 
-    public IRelayCommand RenameImageCommand { get; }
+    public string StatusText { get => m_statusText; set => SetProperty(ref m_statusText, value); }
 
     public string Title => string.IsNullOrWhiteSpace(FilterText) ? "Gen Photo" : "Gen Photo | " + FilterText;
 }

@@ -20,13 +20,21 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5,3" FontSize="16" TextAlignment="Center" />
+        <Menu>
+            <MenuItem Header="Arkiv">
+                <MenuItem Header="Sök nya filer" Command="{Binding SearchNewFilesCommand}" />
+                <MenuItem Header="Upptäck saknade filer" Command="{Binding DetectMissingFilesCommand}" />
+            </MenuItem>
+        </Menu>
 
-        <ItemsControl Margin="5,0,5,5" ItemsSource="{Binding FilterOptions}" Grid.Row="1">
+        <TextBox Grid.Row="1" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" Margin="5" Padding="5,3" FontSize="16" TextAlignment="Center" />
+
+        <ItemsControl Margin="5,0,5,5" ItemsSource="{Binding FilterOptions}" Grid.Row="2">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel />
@@ -44,7 +52,7 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="DarkGray" Margin="0,5,0,0" >
+        <Border Grid.Row="3" BorderThickness="0,1,0,0" BorderBrush="DarkGray" Margin="0,5,0,0" >
             <ScrollViewer>
                 <ItemsControl ItemsSource="{Binding Items}">
                     <ItemsControl.Resources>
@@ -88,5 +96,12 @@
                 </ItemsControl>
             </ScrollViewer>
         </Border>
+
+        <StatusBar Grid.Row="4">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusText}" />
+            </StatusBarItem>
+        </StatusBar>
+        
     </Grid>
 </Window>
