@@ -35,6 +35,7 @@ public class AppDbContext : DbContext
             entity.Property(exp => exp.Title).HasColumnName("title");
             entity.Property(exp => exp.Notes).HasColumnName("notes");
             entity.Property(exp => exp.Size).HasColumnName("size");
+            entity.Property(exp => exp.FileCrc).HasColumnName("file_crc");
         });
 
         modelBuilder.Entity<ImageMeta>(entity =>

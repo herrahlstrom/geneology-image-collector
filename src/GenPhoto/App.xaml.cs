@@ -85,12 +85,11 @@ namespace GenPhoto
 
         private Task StartRutine()
         {
-            var fileManagement = AppHost.Services.GetRequiredService<Maintenance>();
+            var maintanance = AppHost.Services.GetRequiredService<Maintenance>();
 
             _ = Task.Run(async () =>
             {
-                await Task.Delay(1);
-                //await fileManagement.OneTimeFix();
+                await maintanance.OneTimeFix();
             });
 
             return Task.CompletedTask;
