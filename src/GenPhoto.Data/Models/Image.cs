@@ -10,5 +10,6 @@ public class Image
     public string Path { get; set; } = "";
     public int Size { get; set; }
     public string Title { get; set; } = "";
+    public string FileCrc { get; set; } = "";
     public Guid TypeId { get; set; }
 }

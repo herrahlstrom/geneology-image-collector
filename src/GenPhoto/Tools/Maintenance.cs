@@ -1,6 +1,8 @@
-﻿using GenPhoto.Data;
+﻿using DamienG.Security.Cryptography;
+using GenPhoto.Data;
 using GenPhoto.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.IO;
 
@@ -10,11 +12,29 @@ namespace GenPhoto.Tools
     {
         private readonly IDbContextFactory<AppDbContext> _dbFactory;
         private readonly AppSettings _settings;
+        readonly ILogger<Maintenance> m_logger;
 
-        public Maintenance(IDbContextFactory<AppDbContext> dbFactory, AppSettings settings)
+        public Maintenance(IDbContextFactory<AppDbContext> dbFactory, AppSettings settings, ILogger<Maintenance> logger)
         {
+            m_logger = logger;
             _dbFactory = dbFactory;
             _settings = settings;
+        }
+
+        private string GetFileCrc(string filepath)
+        {
+            var crc32 = new Crc32();
+            var hash = new StringBuilder(32);
+
+            using (var fs = File.Open(filepath, FileMode.Open))
+            {
+                foreach (byte b in crc32.ComputeHash(fs))
+                {
+                    hash.AppendFormat("{0:x2}", b);
+                }
+            }
+
+            return hash.ToString();
         }
 
         private static List<string> SearchFiles(DirectoryInfo dir, string relativePath)
@@ -111,6 +131,25 @@ namespace GenPhoto.Tools
 
             foreach (var file in newFiles)
             {
+                string hash = GetFileCrc(file);
+                int size = (int)new FileInfo(file).Length;
+
+                if (await db.Images.Where(x => x.FileCrc == hash).FirstOrDefaultAsync() is { } existsingFile)
+                {
+                    if (existsingFile.Missing)
+                    {
+                        m_logger.LogWarning("Skip import file {0}, but update missing image in database due its hash ({1}) is the same", file, hash);
+                        existsingFile.Path = file;
+                        existsingFile.Missing = false;
+                        existsingFile.Modified = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        m_logger.LogWarning("Skip import file {0}, due its hash ({1}) alreaddy exists in database", file, hash);
+                        continue;
+                    }
+                }
+
                 Data.Models.Image entity = new()
                 {
                     Id = Guid.NewGuid(),
@@ -119,7 +158,8 @@ namespace GenPhoto.Tools
                     Path = file,
                     TypeId = defualtImageTypeId,
                     Notes = "",
-                    Size = file.Length,
+                    Size = size,
+                    FileCrc = hash
                 };
                 db.Images.Add(entity);
             }
@@ -131,20 +171,23 @@ namespace GenPhoto.Tools
 
         public async Task OneTimeFix()
         {
+            await Task.Delay(1);
+            return;
+
             using var db = await _dbFactory.CreateDbContextAsync();
 
+            var miss = await db.Images.Where(x => x.FileCrc == "").ToListAsync();
+            if (miss.Count == 0)
+            {
+                return;
+            }
 
-            var miss = await db.Images.Where(x => x.Size == 0).ToListAsync();
-            var paths = miss.Select(x => x.Path).ToList();
+            var hasher = new Crc32();
 
             foreach (var entry in miss)
             {
-                var fullPath = System.IO.Path.Combine(_settings.RootPath, entry.Path);
-                var fi = new FileInfo(fullPath);
-                if (fi.Exists)
-                {
-                    entry.Size = (int)fi.Length;
-                }
+                var fullPath = Path.Combine(_settings.RootPath, entry.Path);
+                entry.FileCrc = GetFileCrc(fullPath);
             }
             await db.SaveChangesAsync();
         }
